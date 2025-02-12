@@ -1,0 +1,95 @@
+.sidebar {
+  height: 100%;
+  background: var(--primary-gradient);
+  border-radius: 1rem;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  margin: 0 0.5rem;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(10px);
+  transition: transform 0.3s, box-shadow 0.3s;
+}
+
+.sidebar:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.15);
+}
+
+.nav {
+  padding: 1rem 0;
+  height: 100%;
+  overflow-y: auto;
+}
+
+.navGroup {
+  margin-bottom: 1.5rem;
+}
+
+.navTitle {
+  padding: 0.75rem 1.5rem;
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: rgba(255, 255, 255, 0.7);
+  font-weight: 600;
+}
+
+.navItem {
+  display: flex;
+  align-items: center;
+  padding: 0.75rem 1.5rem;
+  color: rgba(255, 255, 255, 0.9);
+  cursor: pointer;
+  transition: all 0.3s;
+  margin: 0.25rem 1rem;
+  border-radius: 0.5rem;
+}
+
+.navItem i {
+  width: 1.25rem;
+  margin-right: 1rem;
+  font-size: 0.9375rem;
+  text-align: center;
+  color: rgba(255, 255, 255, 0.7);
+  transition: color 0.3s;
+}
+
+.navItem span {
+  transition: color 0.3s;
+}
+
+.navItem:hover {
+  background: rgba(255, 255, 255, 0.1);
+  color: #ffffff;
+  transform: translateX(5px);
+}
+
+.navItem:hover i {
+  color: #ffffff;
+}
+
+.navItem.active {
+  background: rgba(255, 255, 255, 0.15);
+  color: #ffffff;
+}
+
+.navItem.active i {
+  color: #ffffff;
+}
+
+/* 滾動條樣式 */
+.nav::-webkit-scrollbar {
+  width: 4px;
+}
+
+.nav::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.nav::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.2);
+  border-radius: 2px;
+}
+
+.nav::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.3);
+} 

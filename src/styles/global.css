@@ -1,0 +1,206 @@
+:root {
+  /* 添加 RGB 值用於透明度計算 */
+  --primary-rgb-light: 0, 181, 216;  /* #00B5D8 的 RGB 值 */
+  --primary-rgb-dark: 11, 47, 74;    /* #0B2F4A 的 RGB 值 */
+
+  /* Light Theme Colors */
+  --primary-light: #00B5D8;  /* 主要水藍色 */
+  --primary-gradient-light: linear-gradient(87deg, #00B5D8 0, #4FD1C5 100%);
+  --secondary-light: #F7FAFC;
+  --text-primary-light: #2D3748;
+  --text-secondary-light: #718096;
+  --sidebar-bg-light: #ffffff;
+  --header-bg-light: var(--primary-gradient-light);
+  --card-bg-light: #ffffff;
+  --hover-light: #E6FFFA;
+  --border-light: #E2E8F0;
+  --logo-bg-light: #E6FFFA;
+
+  /* Dark Theme Colors */
+  --primary-dark: #0B2F4A;  /* 深藍黑色 */
+  --primary-gradient-dark: linear-gradient(87deg, #0B2F4A 0, #1A365D 100%);
+  --secondary-dark: #1A202C;
+  --text-primary-dark: #E2E8F0;    /* 更亮的主要文字顏色 */
+  --text-secondary-dark: #A0AEC0;  /* 更亮的次要文字顏色 */
+  --sidebar-bg-dark: #0B2F4A;
+  --header-bg-dark: var(--primary-gradient-dark);
+  --card-bg-dark: #1A365D;
+  --hover-dark: #2D3748;
+  --border-dark: #2D3748;
+  --logo-bg-dark: #1A365D;
+
+  /* 新增暗色主題特定的文字顏色 */
+  --text-title-dark: #FFFFFF;      /* 標題文字 */
+  --text-subtitle-dark: #CBD5E0;   /* 副標題文字 */
+  --text-muted-dark: #718096;      /* 次要資訊文字 */
+  --text-hover-dark: #4FD1C5;      /* 懸浮時的文字顏色 */
+
+  /* Common Variables */
+  --header-height: 70px;
+  --footer-height: 60px;
+  --sidebar-width: 250px;
+  --success: #38B2AC;
+  --info: #00B5D8;
+  --warning: #ED8936;
+  --danger: #E53E3E;
+}
+
+[data-theme='light'] {
+  --primary: var(--primary-light);
+  --primary-gradient: var(--primary-gradient-light);
+  --secondary: var(--secondary-light);
+  --text-primary: var(--text-primary-light);
+  --text-secondary: var(--text-secondary-light);
+  --sidebar-bg: var(--sidebar-bg-light);
+  --header-bg: var(--header-bg-light);
+  --card-bg: var(--card-bg-light);
+  --hover: var(--hover-light);
+  --border: var(--border-light);
+  --primary-rgb: var(--primary-rgb-light);
+}
+
+[data-theme='dark'] {
+  --primary: var(--primary-dark);
+  --primary-gradient: var(--primary-gradient-dark);
+  --secondary: var(--secondary-dark);
+  --text-primary: var(--text-primary-dark);
+  --text-secondary: var(--text-secondary-dark);
+  --sidebar-bg: var(--sidebar-bg-dark);
+  --header-bg: var(--header-bg-dark);
+  --card-bg: var(--card-bg-dark);
+  --hover: var(--hover-dark);
+  --border: var(--border-dark);
+  --primary-rgb: var(--primary-rgb-dark);
+
+  /* 調整暗色主題下的特定元素樣式 */
+  .pageHeader h1 {
+    color: var(--text-title-dark);
+  }
+
+  .navTitle {
+    color: var(--text-subtitle-dark);
+  }
+
+  .navItem {
+    color: var(--text-primary-dark);
+  }
+
+  .navItem:hover {
+    color: var(--text-hover-dark);
+  }
+
+  .navItem i {
+    color: var(--text-muted-dark);
+  }
+
+  .navItem:hover i {
+    color: var(--text-hover-dark);
+  }
+
+  /* 表格文字顏色 */
+  table {
+    color: var(--text-primary-dark);
+  }
+
+  th {
+    color: var(--text-title-dark);
+    background-color: rgba(255, 255, 255, 0.1);
+  }
+
+  td {
+    color: var(--text-subtitle-dark);
+    border-color: var(--border-dark);
+  }
+
+  /* 表格懸浮效果 */
+  tr:hover {
+    background-color: var(--hover-dark);
+  }
+
+  /* 表格狀態顏色 */
+  .status-normal {
+    color: var(--success);
+  }
+
+  .status-warning {
+    color: var(--warning);
+  }
+
+  .status-error {
+    color: var(--danger);
+  }
+
+  /* 表格分頁和控制項 */
+  .table-controls {
+    color: var(--text-subtitle-dark);
+  }
+
+  .table-pagination {
+    color: var(--text-subtitle-dark);
+  }
+
+  /* 表格搜索和過濾器 */
+  .table-search input,
+  .table-filter select {
+    background-color: var(--card-bg-dark);
+    border-color: var(--border-dark);
+    color: var(--text-primary-dark);
+  }
+
+  /* 卡片標題 */
+  .cardHeader {
+    color: var(--text-title-dark);
+  }
+
+  /* 表單元素 */
+  input, select, textarea {
+    color: var(--text-primary-dark);
+    background-color: var(--card-bg-dark);
+    border-color: var(--border-dark);
+  }
+
+  /* 按鈕文字 */
+  button {
+    color: var(--text-primary-dark);
+  }
+
+  /* 連結文字 */
+  a {
+    color: var(--text-hover-dark);
+  }
+
+  a:hover {
+    color: var(--primary-light);
+  }
+}
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  font-family: "Open Sans", sans-serif;
+  background-color: var(--secondary);
+  color: var(--text-primary);
+  line-height: 1.5;
+  transition: background-color 0.3s, color 0.3s;
+  margin: 0;
+  padding: 0;
+  min-height: 100vh;
+}
+
+a {
+  text-decoration: none;
+  color: var(--primary);
+}
+
+button {
+  cursor: pointer;
+  font-family: inherit;
+}
+
+input, select {
+  font-family: inherit;
+} 
