@@ -1,22 +1,65 @@
 .sidebar {
   height: 100%;
-  background: var(--primary-gradient);
-  border-radius: 1rem;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-  margin: 0 0.5rem;
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  backdrop-filter: blur(10px);
-  transition: transform 0.3s, box-shadow 0.3s;
+  width: var(--sidebar-width);
+  background: var(--card-bg);
+  transition: all 0.3s;
+  border-right: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  position: relative;
 }
 
-.sidebar:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.15);
+.sidebar.collapsed {
+  width: var(--sidebar-mini-width);
+}
+
+.sidebarHeader {
+  height: var(--header-height);
+  display: flex;
+  align-items: center;
+  padding: 0 1.25rem;
+  border-bottom: 1px solid var(--border);
+}
+
+.logo {
+  flex: 1;
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: var(--primary);
+}
+
+.logoSmall {
+  display: none;
+}
+
+.collapsed .logoLarge {
+  display: none;
+}
+
+.collapsed .logoSmall {
+  display: block;
+}
+
+.collapseBtn {
+  width: 24px;
+  height: 24px;
+  border: none;
+  background: transparent;
+  color: var(--text-secondary);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.3s;
+}
+
+.collapseBtn:hover {
+  color: var(--primary);
 }
 
 .nav {
-  padding: 1rem 0;
-  height: 100%;
+  flex: 1;
+  padding: 1.25rem 0;
   overflow-y: auto;
 }
 
@@ -25,55 +68,56 @@
 }
 
 .navTitle {
-  padding: 0.75rem 1.5rem;
+  padding: 0.5rem 1.5rem;
   font-size: 0.75rem;
   text-transform: uppercase;
   letter-spacing: 0.04em;
-  color: rgba(255, 255, 255, 0.7);
+  color: var(--text-secondary);
   font-weight: 600;
+}
+
+.collapsed .navTitle {
+  display: none;
 }
 
 .navItem {
   display: flex;
   align-items: center;
   padding: 0.75rem 1.5rem;
-  color: rgba(255, 255, 255, 0.9);
+  color: var(--text-primary);
   cursor: pointer;
   transition: all 0.3s;
-  margin: 0.25rem 1rem;
-  border-radius: 0.5rem;
+  margin: 0.25rem 0;
 }
 
 .navItem i {
   width: 1.25rem;
   margin-right: 1rem;
-  font-size: 0.9375rem;
-  text-align: center;
-  color: rgba(255, 255, 255, 0.7);
+  font-size: 1rem;
+  color: var(--text-secondary);
   transition: color 0.3s;
 }
 
-.navItem span {
-  transition: color 0.3s;
+.collapsed .navItem span {
+  display: none;
 }
 
 .navItem:hover {
-  background: rgba(255, 255, 255, 0.1);
-  color: #ffffff;
-  transform: translateX(5px);
+  background: var(--hover);
+  color: var(--primary);
 }
 
 .navItem:hover i {
-  color: #ffffff;
+  color: var(--primary);
 }
 
 .navItem.active {
-  background: rgba(255, 255, 255, 0.15);
-  color: #ffffff;
+  background: var(--primary-gradient);
+  color: white;
 }
 
 .navItem.active i {
-  color: #ffffff;
+  color: white;
 }
 
 /* 滾動條樣式 */

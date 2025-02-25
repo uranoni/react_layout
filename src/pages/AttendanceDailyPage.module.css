@@ -1,0 +1,155 @@
+.container {
+  padding: 1.5rem;
+}
+
+/* 頂部操作區 */
+.actionBar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1.5rem;
+}
+
+.leftActions {
+  display: flex;
+  gap: 1rem;
+  align-items: center;
+}
+
+.rightActions {
+  display: flex;
+  gap: 1rem;
+}
+
+.dateFilter {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.dateInput {
+  padding: 0.5rem;
+  border: 1px solid var(--border);
+  border-radius: 0.5rem;
+  color: var(--text-primary);
+}
+
+.searchInput {
+  padding: 0.5rem 1rem;
+  border: 1px solid var(--border);
+  border-radius: 0.5rem;
+  width: 200px;
+  color: var(--text-primary);
+}
+
+.actionButton {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 1rem;
+  background: var(--primary);
+  color: white;
+  border: none;
+  border-radius: 0.5rem;
+  cursor: pointer;
+  transition: all 0.3s;
+}
+
+.actionButton:hover {
+  background: var(--primary-dark);
+  transform: translateY(-1px);
+}
+
+.actionButton i {
+  font-size: 0.875rem;
+}
+
+/* 統計資訊區 */
+.statsBar {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+}
+
+.statItem {
+  background: var(--card-bg);
+  padding: 1rem;
+  border-radius: 0.5rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.5rem;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+}
+
+.statLabel {
+  color: var(--text-secondary);
+  font-size: 0.875rem;
+}
+
+.statValue {
+  color: var(--primary);
+  font-size: 1.5rem;
+  font-weight: 600;
+}
+
+/* 表格區域 */
+.tableWrapper {
+  background: var(--card-bg);
+  border-radius: 0.5rem;
+  box-shadow: 0 0 20px rgba(0, 0, 0, 0.08);
+  overflow: hidden;
+}
+
+/* 響應式調整 */
+@media (max-width: 768px) {
+  .actionBar {
+    flex-direction: column;
+    gap: 1rem;
+  }
+
+  .leftActions {
+    width: 100%;
+    flex-direction: column;
+  }
+
+  .rightActions {
+    width: 100%;
+    justify-content: flex-end;
+  }
+
+  .searchInput {
+    width: 100%;
+  }
+}
+
+.title {
+  font-size: 24px;
+  margin-bottom: 20px;
+}
+
+.table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.table th,
+.table td {
+  padding: 10px;
+  border: 1px solid #ddd;
+  text-align: left;
+}
+
+.table th {
+  background-color: #f4f4f4;
+}
+
+.table tr:nth-child(even) {
+  background-color: #f9f9f9;
+}
+
+.table tr:hover {
+  background-color: #f1f1f1;
+}
+  

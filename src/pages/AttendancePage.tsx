@@ -1,59 +1,22 @@
-import styles from './AttendancePage.module.css';
-import Table from '../components/Table';
 import { useState } from 'react';
+import { useNavigate, Outlet } from 'react-router';
+import styles from './AttendancePage.module.css';
 
 const AttendancePage = () => {
   const [activeTab, setActiveTab] = useState('daily');
+  const navigate = useNavigate();
 
-  const columns = [
-    { title: '員工編號', key: 'id' },
-    { title: '姓名', key: 'name' },
-    { title: '部門', key: 'department' },
-    { title: '上班時間', key: 'checkIn' },
-    { title: '下班時間', key: 'checkOut' },
-    { title: '狀態', key: 'status' }
-  ];
-
-  const data = [
-    {
-      id: '001',
-      name: '張三',
-      department: '研發部',
-      checkIn: '09:00',
-      checkOut: '18:00',
-      status: '正常'
-    },
-    {
-      id: '002',
-      name: '李四',
-      department: '行政部',
-      checkIn: '09:15',
-      checkOut: '18:00',
-      status: '遲到'
-    },
-    {
-      id: '002',
-      name: '李四',
-      department: '行政部',
-      checkIn: '09:15',
-      checkOut: '18:00',
-      status: '遲到'
-    },    {
-      id: '002',
-      name: '李四',
-      department: '行政部',
-      checkIn: '09:15',
-      checkOut: '18:00',
-      status: '遲到'
-    },    {
-      id: '002',
-      name: '李四',
-      department: '行政部',
-      checkIn: '09:15',
-      checkOut: '18:00',
-      status: '遲到'
+  const handleTabChange = (tab: string) => {
+    setActiveTab(tab);
+    switch(tab) {
+      case 'daily':
+        navigate('/attendance/daily');
+        break;
+      case 'leave':
+        navigate('/attendance/leave');
+        break;
     }
-  ];
+  };
 
   return (
     <div className={styles.container}>
@@ -62,40 +25,23 @@ const AttendancePage = () => {
         <div className={styles.tabs}>
           <button 
             className={`${styles.tab} ${activeTab === 'daily' ? styles.active : ''}`}
-            onClick={() => setActiveTab('daily')}
+            onClick={() => handleTabChange('daily')}
           >
             <i className="fas fa-calendar-day"></i>
             每日出勤
           </button>
           <button 
-            className={`${styles.tab} ${activeTab === 'summary' ? styles.active : ''}`}
-            onClick={() => setActiveTab('summary')}
+            className={`${styles.tab} ${activeTab === 'leave' ? styles.active : ''}`}
+            onClick={() => handleTabChange('leave')}
           >
-            <i className="fas fa-table"></i>
-            出勤總表
-          </button>
-          <button 
-            className={`${styles.tab} ${activeTab === 'schedule' ? styles.active : ''}`}
-            onClick={() => setActiveTab('schedule')}
-          >
-            <i className="fas fa-calendar-alt"></i>
-            排班管理
+            <i className="fas fa-calendar-times"></i>
+            請假系統
           </button>
         </div>
       </div>
 
       <div className={styles.content}>
-        {activeTab === 'daily' && (
-          <div className={styles.tableWrapper}>
-            <Table columns={columns} data={data} />
-          </div>
-        )}
-        {activeTab === 'summary' && (
-          <div>出勤總表內容</div>
-        )}
-        {activeTab === 'schedule' && (
-          <div>排班管理內容</div>
-        )}
+        <Outlet />
       </div>
     </div>
   );

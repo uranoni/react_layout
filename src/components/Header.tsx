@@ -1,19 +1,22 @@
 import styles from './Header.module.css';
 import useThemeStore from '../store/useThemeStore';
 
-const Header = () => {
+interface HeaderProps {
+  onToggleSidebar: () => void;
+}
+
+const Header = ({ onToggleSidebar }: HeaderProps) => {
   const { theme, toggleTheme } = useThemeStore();
 
   return (
     <div className={styles.header}>
-      {/* 左側 Logo 和搜尋 */}
+      {/* 左側搜尋和折疊按鈕 */}
       <div className={styles.leftSection}>
-        <div className={styles.logo}>
-          {/* 使用文字替代圖片 logo */}
-          <span className={styles.logoText}>LOGO</span>
-        </div>
+        <button className={styles.collapseBtn} onClick={onToggleSidebar}>
+          折疊選單
+        </button>
         <div className={styles.searchBar}>
-          <i className="fas fa-search"></i>
+          <span>搜尋</span>
           <input type="text" placeholder="搜尋..." />
         </div>
       </div>
@@ -22,28 +25,28 @@ const Header = () => {
       <div className={styles.rightSection}>
         {/* 主題切換 */}
         <button onClick={toggleTheme} className={styles.iconButton}>
-          <i className={`fas fa-${theme === 'light' ? 'moon' : 'sun'}`}></i>
+          {theme === 'light' ? '深色模式' : '淺色模式'}
         </button>
 
         {/* 語言切換 */}
         <div className={styles.language}>
-          <i className="fas fa-globe"></i>
+          <span>語言</span>
           <span>中文</span>
         </div>
 
         {/* 通知 */}
         <button className={styles.iconButton}>
-          <i className="fas fa-bell"></i>
+          通知
         </button>
 
         {/* 用戶資訊 */}
         <div className={styles.userInfo}>
           <div className={styles.userAvatar}>
-            <img src="https://via.placeholder.com/36" alt="User Avatar" />
+            頭像
           </div>
           <div className={styles.userName}>
             <span>管理員</span>
-            <i className="fas fa-chevron-down"></i>
+            <span>▼</span>
           </div>
         </div>
       </div>

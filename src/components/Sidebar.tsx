@@ -1,16 +1,41 @@
+import { useNavigate, useLocation } from 'react-router';
 import styles from './Sidebar.module.css';
 
-const Sidebar = () => {
+interface SidebarProps {
+  collapsed: boolean;
+  onCollapse: () => void;
+}
+
+const Sidebar = ({ collapsed, onCollapse }: SidebarProps) => {
+  const navigate = useNavigate();
+  const location = useLocation();
+
   return (
-    <div className={styles.sidebar}>
+    <div className={`${styles.sidebar} ${collapsed ? styles.collapsed : ''}`}>
+      <div className={styles.sidebarHeader}>
+        <div className={styles.logo}>
+          <span className={styles.logoLarge}>LOGO</span>
+          <span className={styles.logoSmall}>L</span>
+        </div>
+        <button className={styles.collapseBtn} onClick={onCollapse}>
+          <i className={`fas fa-${collapsed ? 'angle-right' : 'angle-left'}`}></i>
+        </button>
+      </div>
+
       <nav className={styles.nav}>
         <div className={styles.navGroup}>
           <div className={styles.navTitle}>主要功能</div>
-          <div className={styles.navItem}>
+          <div 
+            className={`${styles.navItem} ${location.pathname === '/' ? styles.active : ''}`}
+            onClick={() => navigate('/')}
+          >
             <i className="fas fa-home"></i>
             <span>首頁</span>
           </div>
-          <div className={styles.navItem}>
+          <div 
+            className={`${styles.navItem} ${location.pathname === '/attendance' ? styles.active : ''}`}
+            onClick={() => navigate('/attendance')}
+          >
             <i className="fas fa-clock"></i>
             <span>出勤系統</span>
           </div>
