@@ -19,7 +19,7 @@
   /* Dark Theme Colors */
   --primary-dark: #6259ca;
   --primary-gradient-dark: linear-gradient(to right, #6259ca 0%, #8074e7 100%);
-  --secondary-dark: #0e0e23;
+  --secondary-dark: #0e0e23;  /* 確保暗色主題的背景色夠深 */
   --text-primary-dark: #dedefd;
   --text-secondary-dark: #8e9bb5;
   /* --sidebar-bg-dark: #0B2F4A; */
@@ -83,4 +83,17 @@
   --primary-rgb: var(--primary-rgb-dark);
   --table-header-bg: #1e1e3f;
   --table-hover: #1e1e3f;
+}
+
+/* 添加全局樣式 */
+body {
+  margin: 0;
+  padding: 0;
+  background-color: var(--secondary);
+  min-height: 100vh;
+}
+
+#root {
+  min-height: 100vh;
+  background-color: var(--secondary);
 }

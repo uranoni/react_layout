@@ -3,7 +3,8 @@
   min-height: 100vh;
   display: flex;
   background-color: var(--secondary);
-  overflow-x: hidden; /* 防止水平滾動 */
+  overflow: hidden;
+  position: relative; /* 添加相對定位 */
 }
 
 /* 側邊欄 */
@@ -23,38 +24,36 @@
 .mainContent {
   flex: 1;
   margin-left: var(--sidebar-width);
-  min-width: 0;
   display: flex;
   flex-direction: column;
-  height: 100vh;
-  max-width: calc(100vw - var(--sidebar-width)); /* 防止內容超出 */
+  min-height: 100vh;
+  width: calc(100vw - var(--sidebar-width));
+  background-color: var(--secondary); /* 添加背景顏色 */
 }
 
 /* Header 部分 */
 .headerContainer {
-  position: sticky;
-  top: 0;
   height: var(--header-height);
   background: var(--card-bg);
   border-bottom: 1px solid var(--border);
   z-index: 999;
-  display: flex;
-  align-items: center;
+  width: 100%; /* 確保寬度 100% */
 }
 
 /* 內容包裝器 */
 .contentWrapper {
   flex: 1;
-  overflow: auto;
-  height: calc(100vh - var(--header-height));
+  overflow-y: auto;
   background: var(--secondary);
+  width: 100%;
+  padding: 0; /* 移除內邊距 */
 }
 
 /* 頁面容器 */
 .pageContainer {
-  height: 100%;
-  display: flex;
-  flex-direction: column;
+  min-height: calc(100vh - var(--header-height));
+  width: 100%;
+  background-color: var(--secondary); /* 添加背景顏色 */
 }
 
 /* 側邊欄收起時的樣式 */
@@ -64,7 +63,7 @@
 
 .sidebarCollapsed .mainContent {
   margin-left: var(--sidebar-mini-width);
-  max-width: calc(100vw - var(--sidebar-mini-width));
+  width: calc(100vw - var(--sidebar-mini-width));
 }
 
 /* 響應式調整 */
@@ -81,7 +80,7 @@
 
   .mainContent {
     margin-left: 0;
-    max-width: 100vw;
+    width: 100vw;
   }
 
   .sidebarCollapsed .sidebar {
@@ -90,7 +89,7 @@
 
   .sidebarCollapsed .mainContent {
     margin-left: 0;
-    max-width: 100vw;
+    width: 100vw;
   }
 }
 
