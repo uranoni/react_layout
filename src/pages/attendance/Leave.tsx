@@ -1,7 +1,7 @@
-import styles from './AttendanceLeave.module.css';
-import Table from '../components/Table';
+import styles from './Leave.module.css';
+import Table from '../../components/Table';
 
-const AttendanceLeave = () => {
+const Leave = () => {
   const columns = [
     { title: '申請編號', key: 'id' },
     { title: '員工姓名', key: 'name' },
@@ -39,4 +39,4 @@ const AttendanceLeave = () => {
   );
 };
 
-export default AttendanceLeave; 
+export default Leave; 

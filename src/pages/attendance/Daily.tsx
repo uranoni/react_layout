@@ -1,8 +1,8 @@
 import { useState } from 'react';
-import styles from './AttendanceDailyPage.module.css';
-import Table from '../components/Table';
+import styles from './Daily.module.css';
+import Table from '../../components/Table';
 
-const AttendanceDailyPage = () => {
+const Daily = () => {
   const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);
 
   const columns = [
@@ -98,4 +98,4 @@ const AttendanceDailyPage = () => {
   );
 };
 
-export default AttendanceDailyPage;
+export default Daily;

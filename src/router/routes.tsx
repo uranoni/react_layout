@@ -1,9 +1,9 @@
 import { createBrowserRouter } from 'react-router';
 import MainLayout from '../layout/MainLayout';
 import HomePage from '../pages/HomePage';
-import AttendancePage from '../pages/AttendancePage';
-import AttendanceDailyPage from '../pages/AttendanceDailyPage';
-import AttendanceLeavePage from '../pages/AttendanceLeavePage';
+import AttendancePage from '../pages/attendance/AttendancePage';
+import Daily from '../pages/attendance/Daily';
+import Leave from '../pages/attendance/Leave';
 import LoginPage from '../pages/LoginPage';
 import NotFoundPage from '../pages/NotFoundPage';
 
@@ -22,11 +22,11 @@ export const router = createBrowserRouter([
         children: [
           {
             path: 'daily',
-            element: <AttendanceDailyPage />
+            element: <Daily />
           },
           {
             path: 'leave',
-            element: <AttendanceLeavePage />
+            element: <Leave />
           }
         ]
       }
