@@ -25,6 +25,7 @@
   display: flex;
   align-items: center;
   gap: 0.5rem;
+  color: var(--text-primary);
 }
 
 .dateInput {
@@ -32,6 +33,7 @@
   border: 1px solid var(--border);
   border-radius: 0.5rem;
   color: var(--text-primary);
+  background-color: var(--card-bg);
 }
 
 .searchInput {
@@ -40,6 +42,7 @@
   border-radius: 0.5rem;
   width: 200px;
   color: var(--text-primary);
+  background-color: var(--card-bg);
 }
 
 .actionButton {
@@ -55,9 +58,13 @@
   transition: all 0.3s;
 }
 
-.actionButton:hover {
-  background: var(--primary-dark);
+.actionButton:hover:not(:disabled) {
   transform: translateY(-1px);
+}
+
+.actionButton:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
 }
 
 .actionButton i {
@@ -100,6 +107,28 @@
   border-radius: 0.5rem;
   box-shadow: 0 0 20px rgba(0, 0, 0, 0.08);
   overflow: hidden;
+}
+
+/* 狀態樣式 */
+.status {
+  padding: 0.25rem 0.5rem;
+  border-radius: 0.25rem;
+  font-size: 0.875rem;
+}
+
+.status.checkedIn {
+  background: rgba(var(--success-rgb), 0.1);
+  color: var(--success);
+}
+
+.status.pending {
+  background: rgba(var(--warning-rgb), 0.1);
+  color: var(--warning);
+}
+
+.status.leave {
+  background: rgba(var(--info-rgb), 0.1);
+  color: var(--info);
 }
 
 /* 響應式調整 */

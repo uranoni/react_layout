@@ -3,11 +3,12 @@ import styles from './Table.module.css';
 interface Column {
   title: string;
   key: string;
+  render?: (record: any) => React.ReactNode;
 }
 
 interface TableProps {
   columns: Column[];
-  data: Record<string, string>[];
+  data: Record<string, any>[];
 }
 
 const Table = ({ columns, data }: TableProps) => {
@@ -39,15 +40,7 @@ const Table = ({ columns, data }: TableProps) => {
             <tr key={index}>
               {columns.map((column) => (
                 <td key={column.key}>
-                  {column.key === 'status' ? (
-                    <span className={`${styles.status} ${getStatusClass(row[column.key])}`}>
-                      {row[column.key]}
-                    </span>
-                  ) : column.key === 'actions' ? (
-                    <button className={styles.actionButton}>{row[column.key]}</button>
-                  ) : (
-                    row[column.key]
-                  )}
+                  {column.render ? column.render(row) : row[column.key]}
                 </td>
               ))}
             </tr>
