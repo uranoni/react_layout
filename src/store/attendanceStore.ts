@@ -26,6 +26,7 @@ interface AttendanceState {
   fetchAttendanceData: (date?: string) => void;
   updateStatus: (eid: string, status: 'Checked-in' | 'Pending' | 'Leave') => void;
   batchCheckIn: (eids: string[]) => void;
+  batchCancelCheckIn: (eids: string[]) => void;
 }
 
 // 模擬工程師資料
@@ -77,7 +78,7 @@ export const useAttendanceStore = create<AttendanceState>((set, get) => ({
       attendanceRecords: state.attendanceRecords.map(record => {
         if (record.eid === eid) {
           // 如果是簽到，添加時間
-          const time = status === 'Checked-in' ? new Date().toLocaleTimeString() : record.time;
+          const time = status === 'Checked-in' ? new Date().toLocaleTimeString() : '';
           return { ...record, status, time };
         }
         return record;
@@ -92,6 +93,17 @@ export const useAttendanceStore = create<AttendanceState>((set, get) => ({
       attendanceRecords: state.attendanceRecords.map(record => {
         if (eids.includes(record.eid) && record.status !== 'Leave') {
           return { ...record, status: 'Checked-in', time: now };
+        }
+        return record;
+      })
+    }));
+  },
+  
+  batchCancelCheckIn: (eids) => {
+    set(state => ({
+      attendanceRecords: state.attendanceRecords.map(record => {
+        if (eids.includes(record.eid) && record.status !== 'Leave') {
+          return { ...record, status: 'Pending', time: '' };
         }
         return record;
       })

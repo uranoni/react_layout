@@ -67,6 +67,15 @@
   cursor: not-allowed;
 }
 
+/* 取消打卡按鈕樣式 */
+.actionButton.cancelButton {
+  background: var(--danger);
+}
+
+.actionButton.cancelButton:hover:not(:disabled) {
+  background: rgba(var(--danger-rgb), 0.9);
+}
+
 .actionButton i {
   font-size: 0.875rem;
 }

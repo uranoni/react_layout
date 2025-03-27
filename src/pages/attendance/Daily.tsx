@@ -5,7 +5,7 @@ import { useAttendanceStore } from '../../store/attendanceStore';
 import { useLeaveStore } from '../../store/leaveStore';
 
 const Daily = () => {
-  const { attendanceRecords, engineers, fetchAttendanceData, batchCheckIn } = useAttendanceStore();
+  const { attendanceRecords, engineers, fetchAttendanceData, batchCheckIn, batchCancelCheckIn } = useAttendanceStore();
   const { leaveRecords } = useLeaveStore();
   
   // 使用當地時區格式化日期
@@ -53,6 +53,15 @@ const Daily = () => {
   const handleBatchCheckIn = () => {
     if (selectedEids.length > 0) {
       batchCheckIn(selectedEids);
+      setSelectedEids([]);
+      setSelectAll(false);
+    }
+  };
+
+  // 新增取消打卡功能
+  const handleBatchCancelCheckIn = () => {
+    if (selectedEids.length > 0) {
+      batchCancelCheckIn(selectedEids);
       setSelectedEids([]);
       setSelectAll(false);
     }
@@ -181,6 +190,14 @@ const Daily = () => {
             disabled={selectedEids.length === 0}
           >
             一鍵打卡
+          </button>
+          {/* 新增取消打卡按鈕 */}
+          <button 
+            className={`${styles.actionButton} ${styles.cancelButton}`}
+            onClick={handleBatchCancelCheckIn}
+            disabled={selectedEids.length === 0}
+          >
+            取消打卡
           </button>
         </div>
       </div>
