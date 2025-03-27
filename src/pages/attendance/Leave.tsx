@@ -8,11 +8,22 @@ const Leave = () => {
   const { leaveRecords, addLeaveRecord, removeLeaveRecord } = useLeaveStore();
   const { engineers } = useAttendanceStore();
   const [showModal, setShowModal] = useState(false);
+  
+  // 使用當地時區格式化日期
+  const formatDate = (date: Date) => {
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  };
+  
+  const today = formatDate(new Date());
+  
   const [formData, setFormData] = useState({
     account: '',
-    date: new Date().toISOString().split('T')[0],
-    startTime: '09:00',
-    endTime: '18:00',
+    date: today,
+    startDateTime: `${today}T09:00`,
+    endDateTime: `${today}T18:00`,
     reason: '',
     proxy: ''
   });
@@ -25,10 +36,21 @@ const Leave = () => {
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
-    setFormData({
-      ...formData,
-      [name]: value
-    });
+    
+    // 如果修改的是開始日期時間，同時更新日期欄位
+    if (name === 'startDateTime') {
+      const dateOnly = value.split('T')[0];
+      setFormData({
+        ...formData,
+        [name]: value,
+        date: dateOnly
+      });
+    } else {
+      setFormData({
+        ...formData,
+        [name]: value
+      });
+    }
   };
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -38,9 +60,9 @@ const Leave = () => {
     // 重置表單
     setFormData({
       account: '',
-      date: new Date().toISOString().split('T')[0],
-      startTime: '09:00',
-      endTime: '18:00',
+      date: today,
+      startDateTime: `${today}T09:00`,
+      endDateTime: `${today}T18:00`,
       reason: '',
       proxy: ''
     });
@@ -52,6 +74,18 @@ const Leave = () => {
     }
   };
 
+  // 格式化日期時間顯示
+  const formatDateTime = (dateTimeStr: string) => {
+    const date = new Date(dateTimeStr);
+    return date.toLocaleString('zh-TW', {
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit',
+      hour: '2-digit',
+      minute: '2-digit'
+    });
+  };
+
   const columns = [
     { title: '員工帳號', key: 'account' },
     { 
@@ -60,8 +94,16 @@ const Leave = () => {
       render: (record: any) => getEmployeeName(record.account)
     },
     { title: '請假日期', key: 'date' },
-    { title: '開始時間', key: 'startTime' },
-    { title: '結束時間', key: 'endTime' },
+    { 
+      title: '開始時間', 
+      key: 'startDateTime',
+      render: (record: any) => formatDateTime(record.startDateTime)
+    },
+    { 
+      title: '結束時間', 
+      key: 'endDateTime',
+      render: (record: any) => formatDateTime(record.endDateTime)
+    },
     { title: '請假原因', key: 'reason' },
     { 
       title: '代理人', 
@@ -130,25 +172,13 @@ const Leave = () => {
                 </select>
               </div>
               
-              <div className={styles.formGroup}>
-                <label>請假日期</label>
-                <input 
-                  type="date" 
-                  name="date" 
-                  value={formData.date} 
-                  onChange={handleInputChange}
-                  required
-                  className={styles.input}
-                />
-              </div>
-              
               <div className={styles.formRow}>
                 <div className={styles.formGroup}>
                   <label>開始時間</label>
                   <input 
-                    type="time" 
-                    name="startTime" 
-                    value={formData.startTime} 
+                    type="datetime-local" 
+                    name="startDateTime" 
+                    value={formData.startDateTime} 
                     onChange={handleInputChange}
                     required
                     className={styles.input}
@@ -158,9 +188,9 @@ const Leave = () => {
                 <div className={styles.formGroup}>
                   <label>結束時間</label>
                   <input 
-                    type="time" 
-                    name="endTime" 
-                    value={formData.endTime} 
+                    type="datetime-local" 
+                    name="endDateTime" 
+                    value={formData.endDateTime} 
                     onChange={handleInputChange}
                     required
                     className={styles.input}

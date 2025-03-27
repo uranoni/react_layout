@@ -3,8 +3,8 @@ import { create } from 'zustand';
 export interface LeaveRecord {
   account: string;
   date: string;
-  startTime: string;
-  endTime: string;
+  startDateTime: string;
+  endDateTime: string;
   reason: string;
   proxy: string | null;
 }
@@ -20,8 +20,8 @@ const mockLeaveRecords: LeaveRecord[] = [
   {
     account: 'roni123',
     date: '2025-03-20',
-    startTime: '08:00',
-    endTime: '12:00',
+    startDateTime: '2025-03-20T08:00',
+    endDateTime: '2025-03-20T12:00',
     reason: '個人事務',
     proxy: 'john123'
   }
