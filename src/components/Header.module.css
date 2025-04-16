@@ -107,6 +107,7 @@
   border-radius: 0.5rem;
   color: var(--text-secondary);
   cursor: pointer;
+  position: relative;
 }
 
 .userInfo:hover {
@@ -120,15 +121,56 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  background: var(--hover);
-  border-radius: 0.5rem;
-  font-size: 0.75rem;
+  background: var(--primary);
+  color: white;
+  border-radius: 50%;
+  font-size: 0.875rem;
 }
 
 .userName {
   display: flex;
   align-items: center;
   gap: 0.5rem;
+  position: relative;
+}
+
+/* 用戶下拉選單 */
+.userDropdown {
+  position: absolute;
+  top: 100%;
+  right: 0;
+  width: 150px;
+  background: var(--card-bg);
+  border: 1px solid var(--border);
+  border-radius: 0.5rem;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  margin-top: 0.5rem;
+  display: none;
+  z-index: 1000;
+}
+
+.userName:hover .userDropdown {
+  display: block;
+}
+
+.dropdownItem {
+  padding: 0.75rem 1rem;
+  color: var(--text-primary);
+  transition: all 0.3s;
+}
+
+.dropdownItem:hover {
+  background: var(--hover);
+  color: var(--primary);
+}
+
+.logoutItem {
+  border-top: 1px solid var(--border);
+  color: var(--danger);
+}
+
+.logoutItem:hover {
+  color: var(--danger);
 }
 
 /* 響應式調整 */

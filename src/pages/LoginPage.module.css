@@ -39,8 +39,27 @@
   border: none;
   border-radius: 4px;
   cursor: pointer;
+  transition: background 0.3s;
 }
 
-.form button:hover {
+.form button:hover:not(:disabled) {
   background: #40a9ff;
+}
+
+.form button:disabled {
+  background: #bfbfbf;
+  cursor: not-allowed;
+}
+
+.buttonLoading {
+  opacity: 0.7;
+}
+
+.errorMessage {
+  background-color: #fff2f0;
+  border: 1px solid #ffccc7;
+  color: #ff4d4f;
+  padding: 8px 12px;
+  border-radius: 4px;
+  margin-bottom: 24px;
 } 

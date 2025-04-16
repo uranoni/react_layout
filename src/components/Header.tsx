@@ -1,5 +1,6 @@
 import styles from './Header.module.css';
 import useThemeStore from '../store/useThemeStore';
+import useAuth from '../hooks/useAuth';
 
 interface HeaderProps {
   onToggleSidebar: () => void;
@@ -7,6 +8,13 @@ interface HeaderProps {
 
 const Header = ({ onToggleSidebar }: HeaderProps) => {
   const { theme, toggleTheme } = useThemeStore();
+  const { user, logout } = useAuth();
+
+  const handleLogout = () => {
+    if (window.confirm('確定要登出嗎？')) {
+      logout();
+    }
+  };
 
   return (
     <div className={styles.header}>
@@ -42,11 +50,20 @@ const Header = ({ onToggleSidebar }: HeaderProps) => {
         {/* 用戶資訊 */}
         <div className={styles.userInfo}>
           <div className={styles.userAvatar}>
-            頭像
+            {user?.name?.charAt(0) || '用'}
           </div>
           <div className={styles.userName}>
-            <span>管理員</span>
-            <span>▼</span>
+            <span>{user?.name || '用戶'}</span>
+            <div className={styles.userDropdown}>
+              <div className={styles.dropdownItem}>個人資料</div>
+              <div className={styles.dropdownItem}>設定</div>
+              <div 
+                className={`${styles.dropdownItem} ${styles.logoutItem}`}
+                onClick={handleLogout}
+              >
+                登出
+              </div>
+            </div>
           </div>
         </div>
       </div>

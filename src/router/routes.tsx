@@ -6,11 +6,12 @@ import Daily from '../pages/attendance/Daily';
 import Leave from '../pages/attendance/Leave';
 import LoginPage from '../pages/LoginPage';
 import NotFoundPage from '../pages/NotFoundPage';
+import PrivateRoute from './PrivateRoute';
 
 export const router = createBrowserRouter([
   {
     path: '/',
-    element: <MainLayout />,
+    element: <PrivateRoute element={<MainLayout />} />,
     children: [
       {
         index: true,
