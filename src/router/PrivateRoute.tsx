@@ -1,27 +1,27 @@
 import { Navigate, useLocation } from 'react-router';
+import { useState, useEffect } from 'react';
 import useAuthStore from '../store/useAuthStore';
-import { useEffect, useState } from 'react';
 
 interface PrivateRouteProps {
   element: React.ReactElement;
 }
 
 const PrivateRoute = ({ element }: PrivateRouteProps) => {
-  const { isAuthenticated, refreshAuth } = useAuthStore();
+  const { isAuthenticated, checkAuth } = useAuthStore();
   const [isChecking, setIsChecking] = useState(true);
   const location = useLocation();
 
   useEffect(() => {
-    const checkAuth = async () => {
+    const verifyAuth = async () => {
       if (!isAuthenticated) {
         // 嘗試刷新 token
-        await refreshAuth();
+        await checkAuth();
       }
       setIsChecking(false);
     };
 
-    checkAuth();
-  }, [isAuthenticated, refreshAuth]);
+    verifyAuth();
+  }, [isAuthenticated, checkAuth]);
 
   if (isChecking) {
     // 可以顯示載入中的畫面

@@ -1,5 +1,4 @@
-import axios, { AxiosError, AxiosRequestConfig, AxiosResponse } from 'axios';
-import { useAuthStore } from '../store/useAuthStore';
+import axios, { AxiosError, AxiosRequestConfig } from 'axios';
 
 // 創建 axios 實例
 const api = axios.create({
@@ -10,10 +9,26 @@ const api = axios.create({
   },
 });
 
+// 從 localStorage 獲取 token
+const getAccessToken = () => localStorage.getItem('accessToken');
+const getRefreshToken = () => localStorage.getItem('refreshToken');
+
+// 設置 token 到 localStorage
+export const setTokens = (accessToken: string, refreshToken: string) => {
+  localStorage.setItem('accessToken', accessToken);
+  localStorage.setItem('refreshToken', refreshToken);
+};
+
+// 清除 token
+export const clearTokens = () => {
+  localStorage.removeItem('accessToken');
+  localStorage.removeItem('refreshToken');
+};
+
 // 請求攔截器
 api.interceptors.request.use(
   (config) => {
-    const token = useAuthStore.getState().accessToken;
+    const token = getAccessToken();
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
     }
@@ -38,19 +53,20 @@ api.interceptors.response.use(
       
       try {
         // 嘗試刷新 token
-        const refreshToken = useAuthStore.getState().refreshToken;
+        const refreshToken = getRefreshToken();
         if (!refreshToken) {
           throw new Error('No refresh token available');
         }
         
+        // 呼叫您的 refresh token API
         const response = await axios.post(`${api.defaults.baseURL}/auth/refresh`, {
           refreshToken,
         });
         
         const { accessToken, refreshToken: newRefreshToken } = response.data;
         
-        // 更新 store 中的 token
-        useAuthStore.getState().setTokens(accessToken, newRefreshToken);
+        // 更新 localStorage 中的 token
+        setTokens(accessToken, newRefreshToken);
         
         // 更新請求頭並重試
         originalRequest.headers = {
@@ -60,8 +76,9 @@ api.interceptors.response.use(
         
         return api(originalRequest);
       } catch (refreshError) {
-        // 刷新失敗，登出用戶
-        useAuthStore.getState().logout();
+        // 刷新失敗，清除 token
+        clearTokens();
+        window.location.href = '/login';
         return Promise.reject(refreshError);
       }
     }
@@ -74,19 +91,42 @@ api.interceptors.response.use(
 export const authAPI = {
   login: async (username: string, password: string) => {
     const response = await api.post('/auth/login', { username, password });
-    return response.data;
+    const { accessToken, refreshToken, user } = response.data;
+    
+    // 將 token 存儲到 localStorage
+    setTokens(accessToken, refreshToken);
+    
+    return { user };
   },
   
-  refresh: async (refreshToken: string) => {
-    const response = await api.post('/auth/refresh', { refreshToken });
-    return response.data;
+  refresh: async () => {
+    const refreshToken = getRefreshToken();
+    if (!refreshToken) return null;
+    
+    try {
+      const response = await api.post('/auth/refresh', { refreshToken });
+      const { accessToken, refreshToken: newRefreshToken, user } = response.data;
+      
+      // 更新 localStorage 中的 token
+      setTokens(accessToken, newRefreshToken);
+      
+      return { user };
+    } catch (error) {
+      clearTokens();
+      return null;
+    }
   },
   
   logout: async () => {
-    const refreshToken = useAuthStore.getState().refreshToken;
+    const refreshToken = getRefreshToken();
     if (refreshToken) {
-      await api.post('/auth/logout', { refreshToken });
+      try {
+        await api.post('/auth/logout', { refreshToken });
+      } catch (error) {
+        console.error('Logout API error:', error);
+      }
     }
+    clearTokens();
   },
   
   getUserProfile: async () => {
