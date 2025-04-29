@@ -135,4 +135,18 @@ export const authAPI = {
   },
 };
 
+// 出勤相關 API
+export const attendanceAPI = {
+  getSiteCheckReport: async (site: string, utcStartDate: string, utcEndDate: string) => {
+    const response = await api.get('/attendance/site-check-report', {
+      params: {
+        site,
+        utc_start_date: utcStartDate,
+        utc_end_date: utcEndDate
+      }
+    });
+    return response.data;
+  }
+};
+
 export default api; 

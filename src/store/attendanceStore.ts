@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 import { useLeaveStore } from './leaveStore';
+import { attendanceAPI } from '../api/api';
 
 export interface Engineer {
   account: string;
@@ -20,13 +21,28 @@ export interface AttendanceRecord {
   proxy?: string | null;
 }
 
+// 新增 API 返回的數據類型
+export interface SiteCheckReportItem {
+  au_id: number;
+  useraccount: string;
+  username: string;
+  tel: string;
+  checkstatus: string;
+  checktime: string;
+  agent: string;
+}
+
 interface AttendanceState {
   engineers: Engineer[];
   attendanceRecords: AttendanceRecord[];
+  siteCheckReports: SiteCheckReportItem[];
+  isLoading: boolean;
+  error: string | null;
   fetchAttendanceData: (date?: string) => void;
   updateStatus: (eid: string, status: 'Checked-in' | 'Pending' | 'Leave') => void;
   batchCheckIn: (eids: string[]) => void;
   batchCancelCheckIn: (eids: string[]) => void;
+  fetchSiteCheckReport: (site: string, startDate: string, endDate: string) => Promise<void>;
 }
 
 // 模擬工程師資料
@@ -46,6 +62,9 @@ const mockEngineers: Engineer[] = [
 export const useAttendanceStore = create<AttendanceState>((set, get) => ({
   engineers: mockEngineers,
   attendanceRecords: [],
+  siteCheckReports: [],
+  isLoading: false,
+  error: null,
   
   fetchAttendanceData: (date) => {
     const targetDate = date || new Date().toISOString().split('T')[0];
@@ -108,5 +127,21 @@ export const useAttendanceStore = create<AttendanceState>((set, get) => ({
         return record;
       })
     }));
+  },
+  
+  // 新增獲取站點檢查報告的方法
+  fetchSiteCheckReport: async (site, startDate, endDate) => {
+    set({ isLoading: true, error: null });
+    
+    try {
+      const data = await attendanceAPI.getSiteCheckReport(site, startDate, endDate);
+      set({ siteCheckReports: data, isLoading: false });
+    } catch (error) {
+      console.error('Failed to fetch site check report:', error);
+      set({ 
+        error: error instanceof Error ? error.message : '獲取站點檢查報告失敗', 
+        isLoading: false 
+      });
+    }
   }
 }));

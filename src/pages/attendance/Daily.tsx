@@ -5,7 +5,17 @@ import { useAttendanceStore } from '../../store/attendanceStore';
 import { useLeaveStore } from '../../store/leaveStore';
 
 const Daily = () => {
-  const { attendanceRecords, engineers, fetchAttendanceData, batchCheckIn, batchCancelCheckIn } = useAttendanceStore();
+  const { 
+    attendanceRecords, 
+    engineers, 
+    fetchAttendanceData, 
+    batchCheckIn, 
+    batchCancelCheckIn,
+    siteCheckReports,
+    fetchSiteCheckReport,
+    isLoading,
+    error
+  } = useAttendanceStore();
   const { leaveRecords } = useLeaveStore();
   
   // 使用當地時區格式化日期
@@ -21,10 +31,25 @@ const Daily = () => {
   const [selectedEids, setSelectedEids] = useState<string[]>([]);
   const [selectAll, setSelectAll] = useState(false);
   const [searchKeyword, setSearchKeyword] = useState('');
+  const [selectedSite, setSelectedSite] = useState<'新竹' | '台中' | '高雄'>('新竹');
 
   useEffect(() => {
     fetchAttendanceData(selectedDate);
   }, [selectedDate]);
+
+  // 當日期或站點變更時，獲取站點檢查報告
+  useEffect(() => {
+    // 將選定的日期轉換為 UTC 格式
+    const startDate = new Date(selectedDate);
+    startDate.setHours(0, 0, 0, 0);
+    const utcStartDate = startDate.toISOString();
+    
+    const endDate = new Date(selectedDate);
+    endDate.setHours(23, 59, 59, 999);
+    const utcEndDate = endDate.toISOString();
+    
+    fetchSiteCheckReport(selectedSite, utcStartDate, utcEndDate);
+  }, [selectedDate, selectedSite]);
 
   const handleSelectAll = () => {
     if (selectAll) {
@@ -58,7 +83,7 @@ const Daily = () => {
     }
   };
 
-  // 新增取消打卡功能
+  // 取消打卡功能
   const handleBatchCancelCheckIn = () => {
     if (selectedEids.length > 0) {
       batchCancelCheckIn(selectedEids);
@@ -73,6 +98,12 @@ const Daily = () => {
     setSelectAll(false);
   };
 
+  const handleSiteChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    setSelectedSite(e.target.value as '新竹' | '台中' | '高雄');
+    setSelectedEids([]);
+    setSelectAll(false);
+  };
+
   // 獲取代理人名稱
   const getProxyName = (proxyAccount: string | null) => {
     if (!proxyAccount) return '';
@@ -83,29 +114,52 @@ const Daily = () => {
   // 處理資料以顯示部門
   const tableData = attendanceRecords.map(record => {
     const engineer = engineers.find(eng => eng.account === record.account);
+    
+    // 從 siteCheckReports 中查找對應的記錄
+    const siteReport = siteCheckReports.find(report => 
+      report.useraccount === record.account
+    );
+    
+    // 如果有站點報告，使用報告中的狀態和時間
+    const status = siteReport?.checkstatus === 'Checked-in' 
+      ? 'Checked-in' 
+      : record.status;
+    
+    const time = siteReport?.checktime 
+      ? new Date(siteReport.checktime).toLocaleTimeString() 
+      : record.time;
+    
     return {
       ...record,
-      department: engineer?.department || ''
+      department: engineer?.department || '',
+      status,
+      time,
+      agent: siteReport?.agent || record.proxy || ''
     };
   });
 
-  // 篩選資料
+  // 過濾數據
   const filteredData = tableData.filter(record => {
-    // 如果沒有搜尋關鍵字，返回所有資料
-    if (!searchKeyword) return true;
+    // 只顯示選定站點的記錄
+    if (record.site !== selectedSite) return false;
     
-    // 搜尋工號、帳號或姓名
-    const keyword = searchKeyword.toLowerCase();
-    return (
-      record.eid.toLowerCase().includes(keyword) ||
-      record.account.toLowerCase().includes(keyword) ||
-      record.name.toLowerCase().includes(keyword)
-    );
+    // 搜尋關鍵字
+    if (searchKeyword) {
+      const keyword = searchKeyword.toLowerCase();
+      return (
+        record.name.toLowerCase().includes(keyword) ||
+        record.account.toLowerCase().includes(keyword) ||
+        record.eid.toLowerCase().includes(keyword) ||
+        record.department.toLowerCase().includes(keyword)
+      );
+    }
+    return true;
   });
 
+  // 表格列定義
   const columns = [
-    { 
-      title: '選取', 
+    {
+      title: '選擇',
       key: 'select',
       render: (record: any) => (
         <input 
@@ -117,7 +171,6 @@ const Daily = () => {
       )
     },
     { title: '員工編號', key: 'eid' },
-    { title: '帳號', key: 'account' },
     { title: '姓名', key: 'name' },
     { title: '部門', key: 'department' },
     { 
@@ -145,11 +198,18 @@ const Daily = () => {
         return <span className={`${styles.status} ${statusClass}`}>{statusText}</span>;
       }
     },
-    { title: '簽到時間', key: 'time' },
+    { 
+      title: '簽到時間', 
+      key: 'time',
+      render: (record: any) => record.time || '-'
+    },
     { 
       title: '代理人', 
-      key: 'proxy',
-      render: (record: any) => record.proxy ? getProxyName(record.proxy) : '-'
+      key: 'agent',
+      render: (record: any) => {
+        if (record.status !== 'Leave') return '-';
+        return record.agent ? getProxyName(record.agent) : '-';
+      }
     }
   ];
 
@@ -166,6 +226,18 @@ const Daily = () => {
               onChange={handleDateChange}
               className={styles.dateInput}
             />
+          </div>
+          <div className={styles.siteFilter}>
+            <label>選擇站點：</label>
+            <select 
+              value={selectedSite}
+              onChange={handleSiteChange}
+              className={styles.siteSelect}
+            >
+              <option value="新竹">新竹</option>
+              <option value="台中">台中</option>
+              <option value="高雄">高雄</option>
+            </select>
           </div>
           <div className={styles.searchBar}>
             <input 
@@ -191,7 +263,6 @@ const Daily = () => {
           >
             一鍵打卡
           </button>
-          {/* 新增取消打卡按鈕 */}
           <button 
             className={`${styles.actionButton} ${styles.cancelButton}`}
             onClick={handleBatchCancelCheckIn}
@@ -201,6 +272,13 @@ const Daily = () => {
           </button>
         </div>
       </div>
+
+      {/* 錯誤訊息 */}
+      {error && (
+        <div className={styles.errorMessage}>
+          {error}
+        </div>
+      )}
 
       {/* 統計資訊 */}
       <div className={styles.statsBar}>
@@ -230,10 +308,14 @@ const Daily = () => {
 
       {/* 表格區域 */}
       <div className={styles.tableWrapper}>
-        <Table 
-          columns={columns} 
-          data={filteredData} 
-        />
+        {isLoading ? (
+          <div className={styles.loading}>載入中...</div>
+        ) : (
+          <Table 
+            columns={columns} 
+            data={filteredData} 
+          />
+        )}
       </div>
     </div>
   );

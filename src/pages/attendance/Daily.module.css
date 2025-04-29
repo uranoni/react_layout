@@ -21,14 +21,14 @@
   gap: 1rem;
 }
 
-.dateFilter {
+.dateFilter, .siteFilter {
   display: flex;
   align-items: center;
   gap: 0.5rem;
   color: var(--text-primary);
 }
 
-.dateInput {
+.dateInput, .siteSelect {
   padding: 0.5rem;
   border: 1px solid var(--border);
   border-radius: 0.5rem;
@@ -46,9 +46,6 @@
 }
 
 .actionButton {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
   padding: 0.5rem 1rem;
   background: var(--primary);
   color: white;
@@ -59,83 +56,79 @@
 }
 
 .actionButton:hover:not(:disabled) {
+  background: var(--primary-dark);
   transform: translateY(-1px);
 }
 
 .actionButton:disabled {
-  opacity: 0.6;
+  opacity: 0.5;
   cursor: not-allowed;
 }
 
-/* 取消打卡按鈕樣式 */
-.actionButton.cancelButton {
+.cancelButton {
   background: var(--danger);
 }
 
-.actionButton.cancelButton:hover:not(:disabled) {
-  background: rgba(var(--danger-rgb), 0.9);
+.cancelButton:hover:not(:disabled) {
+  background: var(--danger-dark);
 }
 
-.actionButton i {
-  font-size: 0.875rem;
-}
-
-/* 統計資訊區 */
+/* 統計欄 */
 .statsBar {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-  gap: 1rem;
+  display: flex;
+  gap: 1.5rem;
   margin-bottom: 1.5rem;
-}
-
-.statItem {
   background: var(--card-bg);
   padding: 1rem;
   border-radius: 0.5rem;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 0.5rem;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
 }
 
+.statItem {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
 .statLabel {
-  color: var(--text-secondary);
   font-size: 0.875rem;
+  color: var(--text-secondary);
+  margin-bottom: 0.25rem;
 }
 
 .statValue {
-  color: var(--primary);
-  font-size: 1.5rem;
+  font-size: 1.25rem;
   font-weight: 600;
+  color: var(--text-primary);
 }
 
-/* 表格區域 */
+/* 表格容器 */
 .tableWrapper {
   background: var(--card-bg);
   border-radius: 0.5rem;
-  box-shadow: 0 0 20px rgba(0, 0, 0, 0.08);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
   overflow: hidden;
 }
 
 /* 狀態樣式 */
 .status {
-  padding: 0.25rem 0.5rem;
-  border-radius: 0.25rem;
+  display: inline-block;
+  padding: 0.25rem 0.75rem;
+  border-radius: 1rem;
   font-size: 0.875rem;
 }
 
-.status.checkedIn {
+.checkedIn {
   background: rgba(var(--success-rgb), 0.1);
   color: var(--success);
 }
 
-.status.pending {
+.pending {
   background: rgba(var(--warning-rgb), 0.1);
   color: var(--warning);
 }
 
-.status.leave {
+.leave {
   background: rgba(var(--info-rgb), 0.1);
   color: var(--info);
 }
@@ -160,6 +153,24 @@
   .searchInput {
     width: 100%;
   }
+}
+
+/* 錯誤訊息 */
+.errorMessage {
+  background-color: rgba(var(--danger-rgb), 0.1);
+  color: var(--danger);
+  padding: 0.75rem 1rem;
+  border-radius: 0.5rem;
+  margin-bottom: 1rem;
+}
+
+/* 載入中 */
+.loading {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 2rem;
+  color: var(--text-secondary);
 }
 
 .title {
