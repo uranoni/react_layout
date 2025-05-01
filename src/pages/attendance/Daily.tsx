@@ -31,25 +31,21 @@ const Daily = () => {
   const [selectedEids, setSelectedEids] = useState<string[]>([]);
   const [selectAll, setSelectAll] = useState(false);
   const [searchKeyword, setSearchKeyword] = useState('');
-  const [selectedSite, setSelectedSite] = useState<'新竹' | '台中' | '高雄'>('新竹');
 
+  // 獲取 API 出勤數據
   useEffect(() => {
-    fetchAttendanceData(selectedDate);
+    try {
+      fetchSiteCheckReport(selectedDate);
+    } catch (error) {
+      console.error('Error fetching daily report:', error);
+    }
   }, [selectedDate]);
 
-  // 當日期或站點變更時，獲取站點檢查報告
+  // 在 Daily.tsx 中添加一個 useEffect 來檢查 API 返回的數據
   useEffect(() => {
-    // 將選定的日期轉換為 UTC 格式
-    const startDate = new Date(selectedDate);
-    startDate.setHours(0, 0, 0, 0);
-    const utcStartDate = startDate.toISOString();
-    
-    const endDate = new Date(selectedDate);
-    endDate.setHours(23, 59, 59, 999);
-    const utcEndDate = endDate.toISOString();
-    
-    fetchSiteCheckReport(selectedSite, utcStartDate, utcEndDate);
-  }, [selectedDate, selectedSite]);
+    console.log('API 返回的數據:', siteCheckReports);
+    console.log('本地出勤記錄:', attendanceRecords);
+  }, [siteCheckReports, attendanceRecords]);
 
   const handleSelectAll = () => {
     if (selectAll) {
@@ -75,20 +71,30 @@ const Daily = () => {
     }
   };
 
-  const handleBatchCheckIn = () => {
+  const handleBatchCheckIn = async () => {
     if (selectedEids.length > 0) {
-      batchCheckIn(selectedEids);
-      setSelectedEids([]);
-      setSelectAll(false);
+      try {
+        await batchCheckIn(selectedEids);
+        setSelectedEids([]);
+        setSelectAll(false);
+      } catch (error) {
+        console.error('批次打卡失敗:', error);
+        // 錯誤已經在 store 中處理
+      }
     }
   };
 
   // 取消打卡功能
-  const handleBatchCancelCheckIn = () => {
+  const handleBatchCancelCheckIn = async () => {
     if (selectedEids.length > 0) {
-      batchCancelCheckIn(selectedEids);
-      setSelectedEids([]);
-      setSelectAll(false);
+      try {
+        await batchCancelCheckIn(selectedEids);
+        setSelectedEids([]);
+        setSelectAll(false);
+      } catch (error) {
+        console.error('批次取消打卡失敗:', error);
+        // 錯誤已經在 store 中處理
+      }
     }
   };
 
@@ -98,68 +104,70 @@ const Daily = () => {
     setSelectAll(false);
   };
 
-  const handleSiteChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
-    setSelectedSite(e.target.value as '新竹' | '台中' | '高雄');
-    setSelectedEids([]);
-    setSelectAll(false);
-  };
-
   // 獲取代理人名稱
   const getProxyName = (proxyAccount: string | null) => {
     if (!proxyAccount) return '';
     const proxy = engineers.find(eng => eng.account === proxyAccount);
-    return proxy ? proxy.name : '';
+    return proxy ? proxy.name : proxyAccount; // 如果找不到代理人，直接顯示帳號
   };
 
-  // 處理資料以顯示部門
-  const tableData = attendanceRecords.map(record => {
-    const engineer = engineers.find(eng => eng.account === record.account);
-    
-    // 從 siteCheckReports 中查找對應的記錄
-    const siteReport = siteCheckReports.find(report => 
-      report.useraccount === record.account
+  // 直接使用 API 返回的數據創建表格數據
+  const apiTableData = siteCheckReports.map(apiRecord => {
+    // 查找對應的本地記錄
+    const localRecord = attendanceRecords.find(record => 
+      record.account === apiRecord.useraccount
     );
     
-    // 如果有站點報告，使用報告中的狀態和時間
-    const status = siteReport?.checkstatus === 'Checked-in' 
-      ? 'Checked-in' 
-      : record.status;
+    // 查找工程師資料
+    const engineer = engineers.find(eng => eng.account === apiRecord.useraccount);
     
-    const time = siteReport?.checktime 
-      ? new Date(siteReport.checktime).toLocaleTimeString() 
-      : record.time;
+    // 將 API 狀態轉換為本地狀態
+    let status: 'Checked-in' | 'Pending' | 'Leave' = 'Pending';
+    if (apiRecord.status === 'checkin') {
+      status = 'Checked-in';
+    } else if (localRecord?.status === 'Leave') {
+      status = 'Leave';
+    }
     
     return {
-      ...record,
+      eid: apiRecord.useraccount, // 使用 useraccount 作為員工編號
+      account: apiRecord.useraccount,
+      name: apiRecord.username, // 使用 useraccount 作為名稱，因為 API 沒有返回 username
       department: engineer?.department || '',
+      site: apiRecord.site,
+      tel: apiRecord.telephone || '',
       status,
-      time,
-      agent: siteReport?.agent || record.proxy || ''
+      time: apiRecord.checktime || '',
+      agent: apiRecord.delegate,
+      date: apiRecord.updatedate
     };
   });
 
-  // 過濾數據
-  const filteredData = tableData.filter(record => {
-    // 只顯示選定站點的記錄
-    if (record.site !== selectedSite) return false;
+  // 合併 API 數據和本地數據
+  const mergedData = [
+    ...apiTableData,
+    ...attendanceRecords.filter(record => 
+      !siteCheckReports.some(api => api.useraccount === record.account)
+    )
+  ];
+
+  // 使用合併後的數據進行過濾
+  const filteredData = mergedData.filter(record => {
+    if (!searchKeyword) return true;
     
-    // 搜尋關鍵字
-    if (searchKeyword) {
-      const keyword = searchKeyword.toLowerCase();
-      return (
-        record.name.toLowerCase().includes(keyword) ||
-        record.account.toLowerCase().includes(keyword) ||
-        record.eid.toLowerCase().includes(keyword) ||
-        record.department.toLowerCase().includes(keyword)
-      );
-    }
-    return true;
+    const keyword = searchKeyword.toLowerCase();
+    return (
+      (record.name || '').toLowerCase().includes(keyword) ||
+      (record.account || '').toLowerCase().includes(keyword) ||
+      (record.department || '').toLowerCase().includes(keyword) ||
+      (record.tel || '').toLowerCase().includes(keyword)
+    );
   });
 
   // 表格列定義
   const columns = [
-    {
-      title: '選擇',
+    { 
+      title: '選擇', 
       key: 'select',
       render: (record: any) => (
         <input 
@@ -170,9 +178,25 @@ const Daily = () => {
         />
       )
     },
-    { title: '員工編號', key: 'eid' },
-    { title: '姓名', key: 'name' },
-    { title: '部門', key: 'department' },
+    { 
+      title: '帳號',
+      key: 'eid' 
+    },
+    { 
+      title: '姓名', 
+      key: 'name',
+      render: (record: any) => record.name || '-'
+    },
+    { 
+      title: '部門', 
+      key: 'department',
+      render: (record: any) => record.department || '-'
+    },
+    {
+      title: '電話',
+      key: 'tel',
+      render: (record: any) => record.tel || '-'
+    },
     { 
       title: '狀態', 
       key: 'status',
@@ -193,9 +217,16 @@ const Daily = () => {
             statusText = '請假';
             statusClass = styles.leave;
             break;
+          default:
+            statusText = '未知';
+            statusClass = '';
         }
         
-        return <span className={`${styles.status} ${statusClass}`}>{statusText}</span>;
+        return (
+          <span className={`${styles.status} ${statusClass}`}>
+            {statusText}
+          </span>
+        );
       }
     },
     { 
@@ -226,18 +257,6 @@ const Daily = () => {
               onChange={handleDateChange}
               className={styles.dateInput}
             />
-          </div>
-          <div className={styles.siteFilter}>
-            <label>選擇站點：</label>
-            <select 
-              value={selectedSite}
-              onChange={handleSiteChange}
-              className={styles.siteSelect}
-            >
-              <option value="新竹">新竹</option>
-              <option value="台中">台中</option>
-              <option value="高雄">高雄</option>
-            </select>
           </div>
           <div className={styles.searchBar}>
             <input 

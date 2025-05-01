@@ -59,8 +59,9 @@ export const useAuthStore = create<AuthState>((set) => ({
     
     try {
       const result = await authAPI.refresh();
-      if (result && result.user) {
-        set({ isAuthenticated: true, user: result.user });
+      // 只檢查是否成功刷新 token，不檢查 user 資訊
+      if (result) {
+        set({ isAuthenticated: true });
         return true;
       } else {
         set({ isAuthenticated: false, user: null });

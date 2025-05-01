@@ -7,7 +7,7 @@ const LoginPage = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const { login } = useAuth();
-  const [username, setUsername] = useState('');
+  const [useraccount, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
@@ -21,7 +21,7 @@ const LoginPage = () => {
     setIsLoading(true);
 
     try {
-      const success = await login(username, password);
+      const success = await login(useraccount, password);
       if (success) {
         // 登入成功後導向原來的頁面或首頁
         navigate(from, { replace: true });
@@ -47,7 +47,7 @@ const LoginPage = () => {
           <label>用戶名</label>
           <input
             type="text"
-            value={username}
+            value={useraccount}
             onChange={(e) => setUsername(e.target.value)}
             required
             disabled={isLoading}

@@ -2,7 +2,7 @@ import axios, { AxiosError, AxiosRequestConfig } from 'axios';
 
 // 創建 axios 實例
 const api = axios.create({
-  baseURL: import.meta.env.VITE_API_URL || 'http://localhost:3000/api',
+  baseURL: import.meta.env.VITE_API_URL || 'http://localhost:3000',
   timeout: 10000,
   headers: {
     'Content-Type': 'application/json',
@@ -89,8 +89,8 @@ api.interceptors.response.use(
 
 // API 方法
 export const authAPI = {
-  login: async (username: string, password: string) => {
-    const response = await api.post('/auth/login', { username, password });
+  login: async (useraccount: string, password: string) => {
+    const response = await api.post('/login', { useraccount, password });
     const { accessToken, refreshToken, user } = response.data;
     
     // 將 token 存儲到 localStorage
@@ -137,15 +137,47 @@ export const authAPI = {
 
 // 出勤相關 API
 export const attendanceAPI = {
-  getSiteCheckReport: async (site: string, utcStartDate: string, utcEndDate: string) => {
-    const response = await api.get('/attendance/site-check-report', {
-      params: {
-        site,
-        utc_start_date: utcStartDate,
-        utc_end_date: utcEndDate
+  getSiteCheckReport: async (date: string) => {
+    try {
+      console.log('發送請求到 /getdaily，參數:', { utcdate: date });
+      const response = await api.post('/getdaily', { utcdate: date });
+      console.log('API 響應:', response);
+      return response.data;
+    } catch (error) {
+      console.error('獲取日報表失敗:', error);
+      if (axios.isAxiosError(error)) {
+        console.error('請求錯誤詳情:', {
+          status: error.response?.status,
+          data: error.response?.data,
+          headers: error.response?.headers
+        });
       }
-    });
-    return response.data;
+      throw error;
+    }
+  },
+  
+  // 新增批次打卡/取消打卡 API
+  batchSetCheck: async (useraccounts: string[], date: string, status: 'checkin' | 'pending') => {
+    try {
+      console.log('發送請求到 /setcheck，參數:', { useraccounts, date, status });
+      const response = await api.post('/setcheck', {
+        useraccounts,
+        date,
+        status
+      });
+      console.log('API 響應:', response);
+      return response.data;
+    } catch (error) {
+      console.error('批次設置打卡狀態失敗:', error);
+      if (axios.isAxiosError(error)) {
+        console.error('請求錯誤詳情:', {
+          status: error.response?.status,
+          data: error.response?.data,
+          headers: error.response?.headers
+        });
+      }
+      throw error;
+    }
   }
 };
 
