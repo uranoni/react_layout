@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import styles from './Daily.module.css';
 import Table from '../../components/Table';
+import Alert from '../../components/Alert';
 import { useAttendanceStore } from '../../store/attendanceStore';
 import { useLeaveStore } from '../../store/leaveStore';
 
@@ -31,6 +32,15 @@ const Daily = () => {
   const [selectedEids, setSelectedEids] = useState<string[]>([]);
   const [selectAll, setSelectAll] = useState(false);
   const [searchKeyword, setSearchKeyword] = useState('');
+  
+  // Alert 相關狀態
+  const [alertConfig, setAlertConfig] = useState({
+    isOpen: false,
+    title: '',
+    message: '',
+    onConfirm: () => {},
+    type: 'warning' as const
+  });
 
   // 獲取 API 出勤數據
   useEffect(() => {
@@ -46,6 +56,18 @@ const Daily = () => {
     console.log('API 返回的數據:', siteCheckReports);
     console.log('本地出勤記錄:', attendanceRecords);
   }, [siteCheckReports, attendanceRecords]);
+
+  // 檢查是否為過去日期
+  const isPastDate = (date: string) => {
+    const selectedDateObj = new Date(date);
+    const todayObj = new Date();
+    
+    // 設置時間為 00:00:00 以便只比較日期
+    selectedDateObj.setHours(0, 0, 0, 0);
+    todayObj.setHours(0, 0, 0, 0);
+    
+    return selectedDateObj < todayObj;
+  };
 
   const handleSelectAll = () => {
     if (selectAll) {
@@ -71,7 +93,8 @@ const Daily = () => {
     }
   };
 
-  const handleBatchCheckIn = async () => {
+  // 執行打卡操作
+  const executeBatchCheckIn = async () => {
     if (selectedEids.length > 0) {
       try {
         await batchCheckIn(selectedEids);
@@ -79,13 +102,12 @@ const Daily = () => {
         setSelectAll(false);
       } catch (error) {
         console.error('批次打卡失敗:', error);
-        // 錯誤已經在 store 中處理
       }
     }
   };
 
-  // 取消打卡功能
-  const handleBatchCancelCheckIn = async () => {
+  // 執行取消打卡操作
+  const executeBatchCancelCheckIn = async () => {
     if (selectedEids.length > 0) {
       try {
         await batchCancelCheckIn(selectedEids);
@@ -93,8 +115,49 @@ const Daily = () => {
         setSelectAll(false);
       } catch (error) {
         console.error('批次取消打卡失敗:', error);
-        // 錯誤已經在 store 中處理
       }
+    }
+  };
+
+  const handleBatchCheckIn = async () => {
+    if (selectedEids.length === 0) return;
+
+    // 檢查是否為過去日期
+    if (isPastDate(selectedDate)) {
+      setAlertConfig({
+        isOpen: true,
+        title: '補打卡確認',
+        message: `您選擇的日期 ${selectedDate} 是過去的日期，您是否要進行補打卡？`,
+        onConfirm: () => {
+          setAlertConfig(prev => ({ ...prev, isOpen: false }));
+          executeBatchCheckIn();
+        },
+        type: 'warning'
+      });
+    } else {
+      // 當天或未來日期，直接執行
+      await executeBatchCheckIn();
+    }
+  };
+
+  const handleBatchCancelCheckIn = async () => {
+    if (selectedEids.length === 0) return;
+
+    // 檢查是否為過去日期
+    if (isPastDate(selectedDate)) {
+      setAlertConfig({
+        isOpen: true,
+        title: '取消打卡確認',
+        message: `您選擇的日期 ${selectedDate} 是過去的日期，您是否要取消該日期的打卡記錄？`,
+        onConfirm: () => {
+          setAlertConfig(prev => ({ ...prev, isOpen: false }));
+          executeBatchCancelCheckIn();
+        },
+        type: 'warning'
+      });
+    } else {
+      // 當天或未來日期，直接執行
+      await executeBatchCancelCheckIn();
     }
   };
 
@@ -132,7 +195,7 @@ const Daily = () => {
     return {
       eid: apiRecord.useraccount, // 使用 useraccount 作為員工編號
       account: apiRecord.useraccount,
-      name: apiRecord.username, // 使用 useraccount 作為名稱，因為 API 沒有返回 username
+      name: apiRecord.useraccount, // 使用 useraccount 作為名稱，因為 API 沒有返回 username
       department: engineer?.department || '',
       site: apiRecord.site,
       tel: apiRecord.telephone || '',
@@ -246,6 +309,18 @@ const Daily = () => {
 
   return (
     <div className={styles.container}>
+      {/* Alert 組件 */}
+      <Alert
+        isOpen={alertConfig.isOpen}
+        title={alertConfig.title}
+        message={alertConfig.message}
+        onConfirm={alertConfig.onConfirm}
+        onCancel={() => setAlertConfig(prev => ({ ...prev, isOpen: false }))}
+        type={alertConfig.type}
+        confirmText="確認"
+        cancelText="取消"
+      />
+
       {/* 頂部操作區 */}
       <div className={styles.actionBar}>
         <div className={styles.leftActions}>
@@ -257,6 +332,11 @@ const Daily = () => {
               onChange={handleDateChange}
               className={styles.dateInput}
             />
+            {isPastDate(selectedDate) && (
+              <span className={styles.pastDateWarning}>
+                ⚠️ 過去日期
+              </span>
+            )}
           </div>
           <div className={styles.searchBar}>
             <input 
@@ -280,7 +360,7 @@ const Daily = () => {
             onClick={handleBatchCheckIn}
             disabled={selectedEids.length === 0}
           >
-            一鍵打卡
+            {isPastDate(selectedDate) ? '補打卡' : '一鍵打卡'}
           </button>
           <button 
             className={`${styles.actionButton} ${styles.cancelButton}`}

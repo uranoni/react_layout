@@ -201,4 +201,14 @@
 .table tr:hover {
   background-color: #f1f1f1;
 }
+
+.pastDateWarning {
+  color: var(--warning);
+  font-size: 0.875rem;
+  font-weight: 500;
+  margin-left: 0.5rem;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+}
   
