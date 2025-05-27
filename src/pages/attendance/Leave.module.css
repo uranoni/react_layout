@@ -3,9 +3,126 @@
 }
 
 .actionBar {
-  margin-bottom: 1.5rem;
   display: flex;
-  justify-content: flex-end;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 1.5rem;
+  gap: 1rem;
+}
+
+.leftActions {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.rightActions {
+  display: flex;
+  gap: 1rem;
+}
+
+.dateRangeFilter {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+.dateFilter {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  color: var(--text-primary);
+}
+
+.dateInput {
+  padding: 0.5rem;
+  border: 1px solid var(--border);
+  border-radius: 0.5rem;
+  color: var(--text-primary);
+  background-color: var(--card-bg);
+}
+
+.searchButton {
+  padding: 0.5rem 1rem;
+  background: var(--info);
+  color: white;
+  border: none;
+  border-radius: 0.5rem;
+  cursor: pointer;
+  transition: all 0.3s;
+}
+
+.searchButton:hover:not(:disabled) {
+  background: var(--info);
+  opacity: 0.9;
+  transform: translateY(-1px);
+}
+
+.searchButton:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.statsBar {
+  display: flex;
+  gap: 2rem;
+  margin-bottom: 1.5rem;
+  padding: 1rem;
+  background: var(--card-bg);
+  border-radius: 0.5rem;
+  border: 1px solid var(--border);
+}
+
+.statItem {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.25rem;
+}
+
+.statLabel {
+  font-size: 0.875rem;
+  color: var(--text-secondary);
+}
+
+.statValue {
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: var(--primary);
+}
+
+.loading {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 2rem;
+  color: var(--text-secondary);
+}
+
+.errorMessage {
+  background-color: rgba(var(--danger-rgb), 0.1);
+  color: var(--danger);
+  padding: 0.75rem 1rem;
+  border-radius: 0.5rem;
+  margin-bottom: 1rem;
+}
+
+/* 響應式調整 */
+@media (max-width: 768px) {
+  .actionBar {
+    flex-direction: column;
+  }
+
+  .dateRangeFilter {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .statsBar {
+    flex-direction: column;
+    gap: 1rem;
+  }
 }
 
 .addButton {

@@ -178,6 +178,55 @@ export const attendanceAPI = {
       }
       throw error;
     }
+  },
+
+  // 新增請假申請 API
+  submitLeaveRequest: async (leaveData: {
+    account: string;
+    startDateTime: string;
+    endDateTime: string;
+    proxyName: string;
+    reason: string;
+  }) => {
+    try {
+      console.log('發送請假申請到 /leave，參數:', leaveData);
+      const response = await api.post('/leave', leaveData);
+      console.log('請假申請 API 響應:', response);
+      return response.data;
+    } catch (error) {
+      console.error('提交請假申請失敗:', error);
+      if (axios.isAxiosError(error)) {
+        console.error('請求錯誤詳情:', {
+          status: error.response?.status,
+          data: error.response?.data,
+          headers: error.response?.headers
+        });
+      }
+      throw error;
+    }
+  },
+
+  // 新增獲取請假資料 API
+  getLeaveRecords: async (startDate: string, endDate: string) => {
+    try {
+      console.log('發送請求到 /getleave，參數:', { startDate, endDate });
+      const response = await api.post('/getleave', {
+        startDate,
+        endDate
+      });
+      console.log('獲取請假資料 API 響應:', response);
+      return response.data;
+    } catch (error) {
+      console.error('獲取請假資料失敗:', error);
+      if (axios.isAxiosError(error)) {
+        console.error('請求錯誤詳情:', {
+          status: error.response?.status,
+          data: error.response?.data,
+          headers: error.response?.headers
+        });
+      }
+      throw error;
+    }
   }
 };
 
