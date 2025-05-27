@@ -1,103 +1,171 @@
 import { create } from 'zustand';
-import { attendanceAPI } from '../api/api';
+import { getSameEmployers, attendanceAPI } from '../api/api';
+
+// 類型定義
+export interface Colleague {
+  useraccount: string;
+  username: string;
+}
 
 export interface LeaveRecord {
   account: string;
-  date: string;
+  startDateTime: string;
+  endDateTime: string;
+  proxyaccount: string | null;
+  reason: string;
+  accountName: string;
+  proxyName: string | null;
+}
+
+export interface LeaveRequest {
+  account: string;
   startDateTime: string;
   endDateTime: string;
   reason: string;
-  proxy: string | null;
+  proxy?: string;
 }
 
 interface LeaveState {
+  // 請假記錄
   leaveRecords: LeaveRecord[];
+  // 同事資訊
+  colleagues: Colleague[];
+  // 載入狀態
   isLoading: boolean;
+  isLoadingColleagues: boolean;
+  isSubmitting: boolean;
+  // 錯誤狀態
   error: string | null;
-  addLeaveRecord: (record: LeaveRecord) => Promise<void>;
-  removeLeaveRecord: (account: string, date: string) => void;
+  
+  // Actions
   fetchLeaveRecords: (startDate: string, endDate: string) => Promise<void>;
+  addLeaveRecord: (record: Omit<LeaveRecord, 'id'>) => Promise<void>;
+  removeLeaveRecord: (account: string, date: string) => Promise<void>;
+  fetchColleagues: () => Promise<void>;
+  submitLeave: (leaveData: LeaveRequest) => Promise<void>;
+  clearError: () => void;
 }
 
 // 模擬請假資料
 const mockLeaveRecords: LeaveRecord[] = [
   {
     account: 'roni123',
-    date: '2025-03-20',
     startDateTime: '2025-03-20T08:00',
     endDateTime: '2025-03-20T12:00',
     reason: '個人事務',
-    proxy: 'john123'
+    proxy: 'john123',
+    name: 'roni123'
   }
 ];
 
 export const useLeaveStore = create<LeaveState>((set, get) => ({
-  leaveRecords: mockLeaveRecords,
+  leaveRecords: [],
+  colleagues: [],
   isLoading: false,
+  isLoadingColleagues: false,
+  isSubmitting: false,
   error: null,
   
-  addLeaveRecord: async (record) => {
+  fetchLeaveRecords: async (startDate: string, endDate: string) => {
     set({ isLoading: true, error: null });
-    
     try {
-      // 準備 API 請求數據
-      const leaveData = {
+      console.log('查詢請假記錄，日期範圍:', { startDate, endDate });
+      const records = await attendanceAPI.getLeaveRecords(startDate, endDate);
+      console.log('API 回傳的請假記錄:', records);
+      
+      // 確保資料格式正確
+      const formattedRecords = records.map((record: any) => ({
         account: record.account,
         startDateTime: record.startDateTime,
         endDateTime: record.endDateTime,
-        proxyName: record.proxy || '',
-        reason: record.reason
-      };
-      
-      // 調用 API
-      await attendanceAPI.submitLeaveRequest(leaveData);
-      
-      // API 成功後，更新本地狀態
-      set(state => ({
-        leaveRecords: [...state.leaveRecords, record],
-        isLoading: false
+        proxyaccount: record.proxyaccount || null,
+        reason: record.reason,
+        accountName: record.accountName,
+        proxyName: record.proxyName || null
       }));
       
+      set({ leaveRecords: formattedRecords });
     } catch (error) {
-      console.error('提交請假申請失敗:', error);
-      set({ 
-        error: error instanceof Error ? error.message : '提交請假申請失敗', 
-        isLoading: false 
-      });
-      throw error; // 重新拋出錯誤，讓組件可以處理
+      console.error('獲取請假記錄失敗:', error);
+      const errorMessage = error instanceof Error ? error.message : '獲取請假記錄失敗';
+      set({ error: errorMessage });
+      throw error;
+    } finally {
+      set({ isLoading: false });
     }
-  },
-  
-  removeLeaveRecord: (account, date) => {
-    set(state => ({
-      leaveRecords: state.leaveRecords.filter(
-        record => !(record.account === account && record.date === date)
-      )
-    }));
   },
 
-  // 新增獲取請假資料的方法
-  fetchLeaveRecords: async (startDate, endDate) => {
+  addLeaveRecord: async (record: Omit<LeaveRecord, 'id'>) => {
     set({ isLoading: true, error: null });
-    
     try {
-      const data = await attendanceAPI.getLeaveRecords(startDate, endDate);
-      console.log('API 返回的請假資料:', data);
-      
-      // 確保數據是數組
-      const leaveData = Array.isArray(data) ? data : [];
-      
-      set({ 
-        leaveRecords: leaveData, 
-        isLoading: false 
-      });
-      
+      const newRecord = { ...record, id: Date.now().toString() };
+      set(state => ({
+        leaveRecords: [...state.leaveRecords, newRecord as LeaveRecord]
+      }));
     } catch (error) {
-      console.error('獲取請假資料失敗:', error);
-      set({ 
-        error: error instanceof Error ? error.message : '獲取請假資料失敗', 
-        isLoading: false 
-      });
+      const errorMessage = error instanceof Error ? error.message : '新增請假記錄失敗';
+      set({ error: errorMessage });
+      throw error;
+    } finally {
+      set({ isLoading: false });
     }
-  }
+  },
+
+  removeLeaveRecord: async (account: string, date: string) => {
+    set({ isLoading: true, error: null });
+    try {
+      set(state => ({
+        leaveRecords: state.leaveRecords.filter(
+          record => !(record.account === account && record.startDateTime.includes(date))
+        )
+      }));
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : '刪除請假記錄失敗';
+      set({ error: errorMessage });
+      throw error;
+    } finally {
+      set({ isLoading: false });
+    }
+  },
+
+  fetchColleagues: async () => {
+    set({ isLoadingColleagues: true, error: null });
+    try {
+      const colleagues = await getSameEmployers();
+      set({ colleagues });
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : '獲取同事資訊失敗';
+      set({ error: errorMessage });
+      throw error;
+    } finally {
+      set({ isLoadingColleagues: false });
+    }
+  },
+
+  submitLeave: async (leaveData: LeaveRequest) => {
+    set({ isSubmitting: true, error: null });
+    try {
+      // 轉換參數格式以符合後端 API
+      const apiData = {
+        account: leaveData.account,
+        startDateTime: leaveData.startDateTime,
+        endDateTime: leaveData.endDateTime,
+        proxyName: leaveData.proxy || '',
+        reason: leaveData.reason
+      };
+      
+      const newRecord = await attendanceAPI.submitLeaveRequest(apiData);
+      set(state => ({
+        leaveRecords: [...state.leaveRecords, newRecord]
+      }));
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : '提交請假申請失敗';
+      set({ error: errorMessage });
+      throw error;
+    } finally {
+      set({ isSubmitting: false });
+    }
+  },
+
+  clearError: () => set({ error: null })
 })); 

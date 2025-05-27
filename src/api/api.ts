@@ -190,7 +190,7 @@ export const attendanceAPI = {
   }) => {
     try {
       console.log('發送請假申請到 /leave，參數:', leaveData);
-      const response = await api.post('/leave', leaveData);
+      const response = await api.post('/applyleave', leaveData);
       console.log('請假申請 API 響應:', response);
       return response.data;
     } catch (error) {
@@ -209,10 +209,10 @@ export const attendanceAPI = {
   // 新增獲取請假資料 API
   getLeaveRecords: async (startDate: string, endDate: string) => {
     try {
-      console.log('發送請求到 /getleave，參數:', { startDate, endDate });
-      const response = await api.post('/getleave', {
-        startDate,
-        endDate
+      console.log('發送請求到 /getLeaveRecords，參數:', { startDate, endDate });
+      const response = await api.post('/getLeaveRecords', {
+        startdate:startDate,
+        enddate:endDate
       });
       console.log('獲取請假資料 API 響應:', response);
       return response.data;
@@ -227,6 +227,19 @@ export const attendanceAPI = {
       }
       throw error;
     }
+  }
+};
+
+// 新增：獲取同單位同事 API
+export const getSameEmployers = async () => {
+  try {
+    const response = await api.post('/getsameemployers');
+    return response.data;
+  } catch (error) {
+    if (axios.isAxiosError(error)) {
+      throw new Error(error.response?.data?.message || '獲取同事資訊失敗');
+    }
+    throw error;
   }
 };
 

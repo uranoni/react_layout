@@ -2,12 +2,23 @@ import { useState, useEffect } from 'react';
 import styles from './Leave.module.css';
 import Table from '../../components/Table';
 import Alert from '../../components/Alert';
-import { useLeaveStore } from '../../store/leaveStore';
-import { useAttendanceStore } from '../../store/attendanceStore';
+import { useLeaveStore, type LeaveRequest } from '../../store/leaveStore';
 
 const Leave = () => {
-  const { leaveRecords, addLeaveRecord, removeLeaveRecord, isLoading, error } = useLeaveStore();
-  const { engineers } = useAttendanceStore();
+  const { 
+    leaveRecords, 
+    colleagues,
+    isLoading, 
+    isLoadingColleagues,
+    isSubmitting,
+    error,
+    removeLeaveRecord, 
+    fetchColleagues,
+    submitLeave,
+    fetchLeaveRecords,
+    clearError
+  } = useLeaveStore();
+  
   const [showModal, setShowModal] = useState(false);
   
   // Alert 相關狀態
@@ -43,7 +54,7 @@ const Leave = () => {
 
   // 初始載入當天資料
   useEffect(() => {
-    // 這裡可以添加初始載入邏輯
+    fetchLeaveRecords(today, today);
   }, []);
 
   // 處理日期範圍查詢
@@ -64,8 +75,26 @@ const Leave = () => {
       return;
     }
     
-    // 這裡可以添加實際的查詢邏輯
-    console.log('查詢日期範圍:', dateRange);
+    try {
+      await fetchLeaveRecords(dateRange.startDate, dateRange.endDate);
+    } catch (error) {
+      console.error('查詢請假記錄失敗:', error);
+    }
+  };
+
+  // 處理打開新增請假彈窗
+  const handleOpenModal = async () => {
+    setShowModal(true);
+    // 重置表單
+    setFormData({
+      account: '',
+      startDateTime: '',
+      endDateTime: '',
+      reason: '',
+      proxy: ''
+    });
+    // 獲取同事資料
+    await fetchColleagues();
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -87,58 +116,37 @@ const Leave = () => {
       return;
     }
 
-    if (new Date(formData.startDateTime) >= new Date(formData.endDateTime)) {
-      setAlertConfig({
-        isOpen: true,
-        title: '時間驗證',
-        message: '開始時間必須早於結束時間',
-        onConfirm: () => {
-          setAlertConfig(prev => ({ ...prev, isOpen: false }));
-        },
-        onCancel: () => {
-          setAlertConfig(prev => ({ ...prev, isOpen: false }));
-        },
-        type: 'info'
-      });
-      return;
-    }
-
     try {
-      const newRecord = {
-        account: formData.account,
-        date: formData.startDateTime.split('T')[0],
-        startDateTime: formData.startDateTime,
-        endDateTime: formData.endDateTime,
-        reason: formData.reason,
-        proxy: formData.proxy || null
-      };
-
-      await addLeaveRecord(newRecord);
-      
+      await submitLeave(formData);
       setAlertConfig({
         isOpen: true,
         title: '成功',
-        message: '請假申請已提交',
+        message: '請假申請已提交成功',
+        onConfirm: () => {
+          setAlertConfig(prev => ({ ...prev, isOpen: false }));
+          setShowModal(false);
+          // 重新載入請假記錄
+          fetchLeaveRecords(dateRange.startDate, dateRange.endDate);
+        },
+        onCancel: () => {
+          setAlertConfig(prev => ({ ...prev, isOpen: false }));
+        },
+        type: 'success'
+      });
+    } catch (error) {
+      console.error('提交請假申請失敗:', error);
+      setAlertConfig({
+        isOpen: true,
+        title: '錯誤',
+        message: error instanceof Error ? error.message : '提交請假申請失敗',
         onConfirm: () => {
           setAlertConfig(prev => ({ ...prev, isOpen: false }));
         },
         onCancel: () => {
           setAlertConfig(prev => ({ ...prev, isOpen: false }));
         },
-        type: 'info'
+        type: 'error'
       });
-      
-      setShowModal(false);
-      setFormData({
-        account: '',
-        startDateTime: '',
-        endDateTime: '',
-        reason: '',
-        proxy: ''
-      });
-      
-    } catch (error) {
-      console.error('提交請假申請失敗:', error);
     }
   };
 
@@ -158,20 +166,19 @@ const Leave = () => {
     });
   };
 
-  // 表格欄位定義
   const columns = [
     { key: 'account', title: '員工帳號' },
-    { key: 'name', title: '員工姓名' },
+    { key: 'accountName', title: '員工姓名' },
     { key: 'startDateTime', title: '開始時間' },
     { key: 'endDateTime', title: '結束時間' },
     { key: 'reason', title: '請假原因' },
-    { key: 'proxy', title: '代理人' },
+    { key: 'proxyName', title: '代理人' },
     {
       key: 'actions',
       title: '操作',
       render: (value: any, record: any) => (
         <button
-          onClick={() => handleDelete(record.account, record.date)}
+          onClick={() => handleDelete(record.account, record.startDateTime.split('T')[0])}
           className={styles.cancelButton}
         >
           取消
@@ -180,13 +187,9 @@ const Leave = () => {
     }
   ];
 
-  // 統計資料
-  const totalRecords = leaveRecords.length;
-  const dateRangeText = `${dateRange.startDate} ~ ${dateRange.endDate}`;
-
   return (
     <div className={styles.container}>
-      <h2>請假管理</h2>
+      {/* <h2>請假管理</h2> */}
       
       {/* 操作區域 */}
       <div className={styles.actionBar}>
@@ -212,17 +215,17 @@ const Leave = () => {
             </div>
             <button 
               onClick={handleDateRangeSearch}
-              disabled={isLoading}
               className={styles.searchButton}
+              disabled={isLoading}
             >
-              查詢
+              {isLoading ? '查詢中...' : '查詢'}
             </button>
           </div>
         </div>
         
         <div className={styles.rightActions}>
           <button 
-            onClick={() => setShowModal(true)}
+            onClick={handleOpenModal}
             className={styles.addButton}
           >
             新增請假
@@ -230,33 +233,19 @@ const Leave = () => {
         </div>
       </div>
 
-      {/* 統計欄 */}
+      {/* 統計資訊 */}
       <div className={styles.statsBar}>
         <div className={styles.statItem}>
-          <span className={styles.statLabel}>總請假數</span>
-          <span className={styles.statValue}>{totalRecords}</span>
+          <span className={styles.statLabel}>總請假數:</span>
+          <span className={styles.statValue}>{leaveRecords.length}</span>
         </div>
         <div className={styles.statItem}>
-          <span className={styles.statLabel}>查詢範圍</span>
-          <span className={styles.statValue}>{dateRangeText}</span>
+          <span className={styles.statLabel}>查詢範圍:</span>
+          <span className={styles.statValue}>{dateRange.startDate} ~ {dateRange.endDate}</span>
         </div>
       </div>
 
-      {/* 錯誤訊息 */}
-      {error && (
-        <div className={styles.errorMessage}>
-          {error}
-        </div>
-      )}
-
-      {/* 載入中 */}
-      {isLoading && (
-        <div className={styles.loading}>
-          載入中...
-        </div>
-      )}
-
-      {/* 表格 */}
+      {/* 請假記錄表格 */}
       <div className={styles.tableWrapper}>
         <Table 
           data={leaveRecords} 
@@ -296,11 +285,14 @@ const Leave = () => {
                     onChange={(e) => setFormData(prev => ({ ...prev, account: e.target.value }))}
                     className={styles.select}
                     required
+                    disabled={isLoadingColleagues}
                   >
-                    <option value="">請選擇員工</option>
-                    {engineers.map(engineer => (
-                      <option key={engineer.account} value={engineer.account}>
-                        {engineer.name} ({engineer.account})
+                    <option value="">
+                      {isLoadingColleagues ? '載入中...' : '請選擇員工'}
+                    </option>
+                    {colleagues.map(colleague => (
+                      <option key={colleague.useraccount} value={colleague.useraccount}>
+                        {colleague.username}({colleague.useraccount})
                       </option>
                     ))}
                   </select>
@@ -311,11 +303,14 @@ const Leave = () => {
                     value={formData.proxy}
                     onChange={(e) => setFormData(prev => ({ ...prev, proxy: e.target.value }))}
                     className={styles.select}
+                    disabled={isLoadingColleagues}
                   >
-                    <option value="">請選擇代理人（可選）</option>
-                    {engineers.map(engineer => (
-                      <option key={engineer.account} value={engineer.account}>
-                        {engineer.name} ({engineer.account})
+                    <option value="">
+                      {isLoadingColleagues ? '載入中...' : '請選擇代理人（可選）'}
+                    </option>
+                    {colleagues.map(colleague => (
+                      <option key={colleague.useraccount} value={colleague.useraccount}>
+                        {colleague.username}({colleague.useraccount})
                       </option>
                     ))}
                   </select>
@@ -367,9 +362,9 @@ const Leave = () => {
                 <button 
                   type="submit" 
                   className={styles.submitBtn}
-                  disabled={isLoading}
+                  disabled={isSubmitting || isLoadingColleagues}
                 >
-                  {isLoading ? '提交中...' : '提交'}
+                  {isSubmitting ? '提交中...' : '提交'}
                 </button>
               </div>
             </form>
