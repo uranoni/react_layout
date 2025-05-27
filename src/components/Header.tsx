@@ -23,30 +23,31 @@ const Header = ({ onToggleSidebar }: HeaderProps) => {
         <button className={styles.collapseBtn} onClick={onToggleSidebar}>
           折疊選單
         </button>
+        
         <div className={styles.searchBar}>
-          <span>搜尋</span>
+          <span>🔍</span>
           <input type="text" placeholder="搜尋..." />
         </div>
       </div>
 
-      {/* 右側功能區 */}
+      {/* 右側控制項 */}
       <div className={styles.rightSection}>
         {/* 主題切換 */}
-        <button onClick={toggleTheme} className={styles.iconButton}>
-          {theme === 'light' ? '深色模式' : '淺色模式'}
+        <button className={styles.iconButton} onClick={toggleTheme}>
+          {theme === 'light' ? '🌙' : '☀️'}
         </button>
-
-        {/* 語言切換 */}
+        
+        {/* 語言選擇 */}
         <div className={styles.language}>
           <span>語言</span>
           <span>中文</span>
         </div>
-
+        
         {/* 通知 */}
         <button className={styles.iconButton}>
-          通知
+          🔔
         </button>
-
+        
         {/* 用戶資訊 */}
         <div className={styles.userInfo}>
           <div className={styles.userAvatar}>

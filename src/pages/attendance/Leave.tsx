@@ -6,7 +6,7 @@ import { useLeaveStore } from '../../store/leaveStore';
 import { useAttendanceStore } from '../../store/attendanceStore';
 
 const Leave = () => {
-  const { leaveRecords, addLeaveRecord, removeLeaveRecord, fetchLeaveRecords, isLoading, error } = useLeaveStore();
+  const { leaveRecords, addLeaveRecord, removeLeaveRecord, isLoading, error } = useLeaveStore();
   const { engineers } = useAttendanceStore();
   const [showModal, setShowModal] = useState(false);
   
@@ -16,15 +16,13 @@ const Leave = () => {
     title: '',
     message: '',
     onConfirm: () => {},
+    onCancel: () => {},
     type: 'info' as const
   });
   
-  // 使用當地時區格式化日期
+  // 格式化日期為 YYYY-MM-DD
   const formatDate = (date: Date) => {
-    const year = date.getFullYear();
-    const month = String(date.getMonth() + 1).padStart(2, '0');
-    const day = String(date.getDate()).padStart(2, '0');
-    return `${year}-${month}-${day}`;
+    return date.toISOString().split('T')[0];
   };
   
   const today = formatDate(new Date());
@@ -37,162 +35,144 @@ const Leave = () => {
   
   const [formData, setFormData] = useState({
     account: '',
-    date: today,
-    startDateTime: `${today}T09:00`,
-    endDateTime: `${today}T18:00`,
+    startDateTime: '',
+    endDateTime: '',
     reason: '',
     proxy: ''
   });
 
-  // 初始載入時獲取當天的請假資料
+  // 初始載入當天資料
   useEffect(() => {
-    fetchLeaveRecords(dateRange.startDate, dateRange.endDate);
+    // 這裡可以添加初始載入邏輯
   }, []);
 
-  // 獲取員工名稱
-  const getEmployeeName = (account: string) => {
-    const engineer = engineers.find(eng => eng.account === account);
-    return engineer ? engineer.name : account;
-  };
-
-  // 處理日期範圍變更
-  const handleDateRangeChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const { name, value } = e.target;
-    setDateRange(prev => ({
-      ...prev,
-      [name]: value
-    }));
-  };
-
-  // 查詢按鈕處理
-  const handleSearch = () => {
-    if (dateRange.startDate && dateRange.endDate) {
-      if (dateRange.startDate > dateRange.endDate) {
-        setAlertConfig({
-          isOpen: true,
-          title: '日期範圍錯誤',
-          message: '開始日期不能晚於結束日期！',
-          onConfirm: () => {
-            setAlertConfig(prev => ({ ...prev, isOpen: false }));
-          },
-          type: 'error'
-        });
-        return;
-      }
-      fetchLeaveRecords(dateRange.startDate, dateRange.endDate);
+  // 處理日期範圍查詢
+  const handleDateRangeSearch = async () => {
+    if (dateRange.startDate > dateRange.endDate) {
+      setAlertConfig({
+        isOpen: true,
+        title: '日期錯誤',
+        message: '開始日期不能晚於結束日期',
+        onConfirm: () => {
+          setAlertConfig(prev => ({ ...prev, isOpen: false }));
+        },
+        onCancel: () => {
+          setAlertConfig(prev => ({ ...prev, isOpen: false }));
+        },
+        type: 'info'
+      });
+      return;
     }
-  };
-
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
-    const { name, value } = e.target;
     
-    // 如果修改的是開始日期時間，同時更新日期欄位
-    if (name === 'startDateTime') {
-      const dateOnly = value.split('T')[0];
-      setFormData({
-        ...formData,
-        [name]: value,
-        date: dateOnly
-      });
-    } else {
-      setFormData({
-        ...formData,
-        [name]: value
-      });
-    }
+    // 這裡可以添加實際的查詢邏輯
+    console.log('查詢日期範圍:', dateRange);
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    try {
-      await addLeaveRecord(formData);
-      
-      // 成功提交後顯示成功訊息
+    if (!formData.account || !formData.startDateTime || !formData.endDateTime || !formData.reason) {
       setAlertConfig({
         isOpen: true,
-        title: '請假申請成功',
-        message: '您的請假申請已成功提交！',
+        title: '表單驗證',
+        message: '請填寫所有必填欄位',
         onConfirm: () => {
           setAlertConfig(prev => ({ ...prev, isOpen: false }));
         },
-        type: 'success'
+        onCancel: () => {
+          setAlertConfig(prev => ({ ...prev, isOpen: false }));
+        },
+        type: 'info'
+      });
+      return;
+    }
+
+    if (new Date(formData.startDateTime) >= new Date(formData.endDateTime)) {
+      setAlertConfig({
+        isOpen: true,
+        title: '時間驗證',
+        message: '開始時間必須早於結束時間',
+        onConfirm: () => {
+          setAlertConfig(prev => ({ ...prev, isOpen: false }));
+        },
+        onCancel: () => {
+          setAlertConfig(prev => ({ ...prev, isOpen: false }));
+        },
+        type: 'info'
+      });
+      return;
+    }
+
+    try {
+      const newRecord = {
+        account: formData.account,
+        date: formData.startDateTime.split('T')[0],
+        startDateTime: formData.startDateTime,
+        endDateTime: formData.endDateTime,
+        reason: formData.reason,
+        proxy: formData.proxy || null
+      };
+
+      await addLeaveRecord(newRecord);
+      
+      setAlertConfig({
+        isOpen: true,
+        title: '成功',
+        message: '請假申請已提交',
+        onConfirm: () => {
+          setAlertConfig(prev => ({ ...prev, isOpen: false }));
+        },
+        onCancel: () => {
+          setAlertConfig(prev => ({ ...prev, isOpen: false }));
+        },
+        type: 'info'
       });
       
       setShowModal(false);
-      // 重置表單
       setFormData({
         account: '',
-        date: today,
-        startDateTime: `${today}T09:00`,
-        endDateTime: `${today}T18:00`,
+        startDateTime: '',
+        endDateTime: '',
         reason: '',
         proxy: ''
       });
       
-      // 重新獲取請假資料
-      fetchLeaveRecords(dateRange.startDate, dateRange.endDate);
     } catch (error) {
-      // 錯誤處理已在 store 中完成，這裡可以顯示錯誤訊息
       console.error('提交請假申請失敗:', error);
     }
   };
 
-  const handleCancel = (account: string, date: string) => {
+  const handleDelete = (account: string, date: string) => {
     setAlertConfig({
       isOpen: true,
-      title: '取消請假確認',
-      message: '確定要取消此請假申請嗎？',
+      title: '確認刪除',
+      message: '確定要刪除這筆請假記錄嗎？',
       onConfirm: () => {
         removeLeaveRecord(account, date);
         setAlertConfig(prev => ({ ...prev, isOpen: false }));
       },
-      type: 'warning'
+      onCancel: () => {
+        setAlertConfig(prev => ({ ...prev, isOpen: false }));
+      },
+      type: 'info'
     });
   };
 
-  // 格式化日期時間顯示
-  const formatDateTime = (dateTimeStr: string) => {
-    const date = new Date(dateTimeStr);
-    return date.toLocaleString('zh-TW', {
-      year: 'numeric',
-      month: '2-digit',
-      day: '2-digit',
-      hour: '2-digit',
-      minute: '2-digit'
-    });
-  };
-
+  // 表格欄位定義
   const columns = [
-    { title: '員工帳號', key: 'account' },
-    { 
-      title: '員工姓名', 
-      key: 'name',
-      render: (record: any) => getEmployeeName(record.account)
-    },
-    { 
-      title: '開始時間', 
-      key: 'startDateTime',
-      render: (record: any) => formatDateTime(record.startDateTime)
-    },
-    { 
-      title: '結束時間', 
-      key: 'endDateTime',
-      render: (record: any) => formatDateTime(record.endDateTime)
-    },
-    { title: '請假原因', key: 'reason' },
-    { 
-      title: '代理人', 
-      key: 'proxy',
-      render: (record: any) => record.proxy ? getEmployeeName(record.proxy) : '-'
-    },
-    { 
-      title: '操作', 
+    { key: 'account', title: '員工帳號' },
+    { key: 'name', title: '員工姓名' },
+    { key: 'startDateTime', title: '開始時間' },
+    { key: 'endDateTime', title: '結束時間' },
+    { key: 'reason', title: '請假原因' },
+    { key: 'proxy', title: '代理人' },
+    {
       key: 'actions',
-      render: (record: any) => (
-        <button 
-          className={styles.cancelBtn}
-          onClick={() => handleCancel(record.account, record.date)}
+      title: '操作',
+      render: (value: any, record: any) => (
+        <button
+          onClick={() => handleDelete(record.account, record.date)}
+          className={styles.cancelButton}
         >
           取消
         </button>
@@ -200,65 +180,65 @@ const Leave = () => {
     }
   ];
 
+  // 統計資料
+  const totalRecords = leaveRecords.length;
+  const dateRangeText = `${dateRange.startDate} ~ ${dateRange.endDate}`;
+
   return (
     <div className={styles.container}>
-      {/* Alert 組件 */}
-      <Alert
-        isOpen={alertConfig.isOpen}
-        title={alertConfig.title}
-        message={alertConfig.message}
-        onConfirm={alertConfig.onConfirm}
-        onCancel={() => setAlertConfig(prev => ({ ...prev, isOpen: false }))}
-        type={alertConfig.type}
-        confirmText="確認"
-        cancelText="取消"
-      />
-
-      {/* 頂部操作區 */}
+      <h2>請假管理</h2>
+      
+      {/* 操作區域 */}
       <div className={styles.actionBar}>
         <div className={styles.leftActions}>
-          <h1 className={styles.title}>請假管理</h1>
-          
-          {/* 日期範圍選擇 */}
           <div className={styles.dateRangeFilter}>
             <div className={styles.dateFilter}>
-              <label>開始日期:</label>
-              <input 
-                type="date" 
-                name="startDate"
+              <span>開始日期:</span>
+              <input
+                type="date"
                 value={dateRange.startDate}
-                onChange={handleDateRangeChange}
+                onChange={(e) => setDateRange(prev => ({ ...prev, startDate: e.target.value }))}
                 className={styles.dateInput}
               />
             </div>
             <div className={styles.dateFilter}>
-              <label>結束日期:</label>
-              <input 
-                type="date" 
-                name="endDate"
+              <span>結束日期:</span>
+              <input
+                type="date"
                 value={dateRange.endDate}
-                onChange={handleDateRangeChange}
+                onChange={(e) => setDateRange(prev => ({ ...prev, endDate: e.target.value }))}
                 className={styles.dateInput}
               />
             </div>
             <button 
-              className={styles.searchButton}
-              onClick={handleSearch}
+              onClick={handleDateRangeSearch}
               disabled={isLoading}
+              className={styles.searchButton}
             >
-              {isLoading ? '查詢中...' : '查詢'}
+              查詢
             </button>
           </div>
         </div>
         
         <div className={styles.rightActions}>
           <button 
-            className={styles.addButton}
             onClick={() => setShowModal(true)}
-            disabled={isLoading}
+            className={styles.addButton}
           >
             新增請假
           </button>
+        </div>
+      </div>
+
+      {/* 統計欄 */}
+      <div className={styles.statsBar}>
+        <div className={styles.statItem}>
+          <span className={styles.statLabel}>總請假數</span>
+          <span className={styles.statValue}>{totalRecords}</span>
+        </div>
+        <div className={styles.statItem}>
+          <span className={styles.statLabel}>查詢範圍</span>
+          <span className={styles.statValue}>{dateRangeText}</span>
         </div>
       </div>
 
@@ -269,130 +249,118 @@ const Leave = () => {
         </div>
       )}
 
-      {/* 統計資訊 */}
-      <div className={styles.statsBar}>
-        <div className={styles.statItem}>
-          <span className={styles.statLabel}>總請假數</span>
-          <span className={styles.statValue}>{leaveRecords.length}</span>
+      {/* 載入中 */}
+      {isLoading && (
+        <div className={styles.loading}>
+          載入中...
         </div>
-        <div className={styles.statItem}>
-          <span className={styles.statLabel}>查詢範圍</span>
-          <span className={styles.statValue}>
-            {dateRange.startDate} ~ {dateRange.endDate}
-          </span>
-        </div>
-      </div>
+      )}
 
+      {/* 表格 */}
       <div className={styles.tableWrapper}>
-        {isLoading ? (
-          <div className={styles.loading}>載入中...</div>
-        ) : (
-          <Table columns={columns} data={leaveRecords} />
-        )}
+        <Table 
+          data={leaveRecords} 
+          columns={columns}
+        />
       </div>
 
-      {/* 新增請假模態框 */}
+      {/* Alert 組件 */}
+      <Alert
+        isOpen={alertConfig.isOpen}
+        title={alertConfig.title}
+        message={alertConfig.message}
+        onConfirm={alertConfig.onConfirm}
+        onCancel={alertConfig.onCancel}
+        type={alertConfig.type}
+      />
+
+      {/* 新增請假彈窗 */}
       {showModal && (
         <div className={styles.modalOverlay}>
           <div className={styles.modal}>
             <div className={styles.modalHeader}>
-              <h2>新增請假申請</h2>
-              <button 
-                className={styles.closeButton}
+              <h3>新增請假</h3>
+              <button
                 onClick={() => setShowModal(false)}
-                disabled={isLoading}
+                className={styles.closeButton}
               >
                 ×
               </button>
             </div>
             <form onSubmit={handleSubmit} className={styles.form}>
-              <div className={styles.formGroup}>
-                <label>員工帳號</label>
-                <select 
-                  name="account" 
-                  value={formData.account} 
-                  onChange={handleInputChange}
-                  required
-                  className={styles.select}
-                  disabled={isLoading}
-                >
-                  <option value="">請選擇員工</option>
-                  {engineers.map(eng => (
-                    <option key={eng.account} value={eng.account}>
-                      {eng.account} ({eng.name})
-                    </option>
-                  ))}
-                </select>
-              </div>
-              
               <div className={styles.formRow}>
                 <div className={styles.formGroup}>
-                  <label>開始時間</label>
-                  <input 
-                    type="datetime-local" 
-                    name="startDateTime" 
-                    value={formData.startDateTime} 
-                    onChange={handleInputChange}
+                  <label>員工帳號 *</label>
+                  <select
+                    value={formData.account}
+                    onChange={(e) => setFormData(prev => ({ ...prev, account: e.target.value }))}
+                    className={styles.select}
                     required
+                  >
+                    <option value="">請選擇員工</option>
+                    {engineers.map(engineer => (
+                      <option key={engineer.account} value={engineer.account}>
+                        {engineer.name} ({engineer.account})
+                      </option>
+                    ))}
+                  </select>
+                </div>
+                <div className={styles.formGroup}>
+                  <label>代理人</label>
+                  <select
+                    value={formData.proxy}
+                    onChange={(e) => setFormData(prev => ({ ...prev, proxy: e.target.value }))}
+                    className={styles.select}
+                  >
+                    <option value="">請選擇代理人（可選）</option>
+                    {engineers.map(engineer => (
+                      <option key={engineer.account} value={engineer.account}>
+                        {engineer.name} ({engineer.account})
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+
+              <div className={styles.formRow}>
+                <div className={styles.formGroup}>
+                  <label>開始時間 *</label>
+                  <input
+                    type="datetime-local"
+                    value={formData.startDateTime}
+                    onChange={(e) => setFormData(prev => ({ ...prev, startDateTime: e.target.value }))}
                     className={styles.input}
-                    disabled={isLoading}
+                    required
                   />
                 </div>
-                
                 <div className={styles.formGroup}>
-                  <label>結束時間</label>
-                  <input 
-                    type="datetime-local" 
-                    name="endDateTime" 
-                    value={formData.endDateTime} 
-                    onChange={handleInputChange}
-                    required
+                  <label>結束時間 *</label>
+                  <input
+                    type="datetime-local"
+                    value={formData.endDateTime}
+                    onChange={(e) => setFormData(prev => ({ ...prev, endDateTime: e.target.value }))}
                     className={styles.input}
-                    disabled={isLoading}
+                    required
                   />
                 </div>
               </div>
-              
+
               <div className={styles.formGroup}>
-                <label>請假原因</label>
-                <textarea 
-                  name="reason" 
-                  value={formData.reason} 
-                  onChange={handleInputChange}
-                  required
+                <label>請假原因 *</label>
+                <textarea
+                  value={formData.reason}
+                  onChange={(e) => setFormData(prev => ({ ...prev, reason: e.target.value }))}
                   className={styles.textarea}
-                  disabled={isLoading}
+                  placeholder="請輸入請假原因"
+                  required
                 />
               </div>
-              
-              <div className={styles.formGroup}>
-                <label>代理人帳號</label>
-                <select 
-                  name="proxy" 
-                  value={formData.proxy} 
-                  onChange={handleInputChange}
-                  required
-                  className={styles.select}
-                  disabled={isLoading}
-                >
-                  <option value="">請選擇代理人</option>
-                  {engineers
-                    .filter(eng => eng.account !== formData.account)
-                    .map(eng => (
-                      <option key={eng.account} value={eng.account}>
-                        {eng.account} ({eng.name})
-                      </option>
-                    ))
-                  }
-                </select>
-              </div>
-              
+
               <div className={styles.formActions}>
-                <button 
-                  type="button" 
-                  className={styles.cancelBtn}
+                <button
+                  type="button"
                   onClick={() => setShowModal(false)}
-                  disabled={isLoading}
+                  className={styles.cancelBtn}
                 >
                   取消
                 </button>
