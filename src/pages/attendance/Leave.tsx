@@ -13,6 +13,7 @@ const Leave = () => {
     isSubmitting,
     error,
     removeLeaveRecord, 
+    cancelLeave,
     fetchColleagues,
     submitLeave,
     fetchLeaveRecords,
@@ -150,14 +151,61 @@ const Leave = () => {
     }
   };
 
-  const handleDelete = (account: string, date: string) => {
+  const handleDelete = (id: number, accountName: string) => {
+    // 檢查參數是否有效
+    if (!id || typeof id !== 'number') {
+      console.error('無效的 ID:', id);
+      setAlertConfig({
+        isOpen: true,
+        title: '錯誤',
+        message: '無效的請假記錄 ID',
+        onConfirm: () => {
+          setAlertConfig(prev => ({ ...prev, isOpen: false }));
+        },
+        onCancel: () => {
+          setAlertConfig(prev => ({ ...prev, isOpen: false }));
+        },
+        type: 'error'
+      });
+      return;
+    }
+
     setAlertConfig({
       isOpen: true,
-      title: '確認刪除',
-      message: '確定要刪除這筆請假記錄嗎？',
-      onConfirm: () => {
-        removeLeaveRecord(account, date);
-        setAlertConfig(prev => ({ ...prev, isOpen: false }));
+      title: '確認取消請假',
+      message: `確定要取消 ${accountName || '該員工'} 的請假申請嗎？`,
+      onConfirm: async () => {
+        try {
+          await cancelLeave(id);
+          setAlertConfig({
+            isOpen: true,
+            title: '成功',
+            message: '請假申請已成功取消',
+            onConfirm: () => {
+              setAlertConfig(prev => ({ ...prev, isOpen: false }));
+              // 重新載入請假記錄
+              fetchLeaveRecords(dateRange.startDate, dateRange.endDate);
+            },
+            onCancel: () => {
+              setAlertConfig(prev => ({ ...prev, isOpen: false }));
+            },
+            type: 'success'
+          });
+        } catch (error) {
+          console.error('取消請假失敗:', error);
+          setAlertConfig({
+            isOpen: true,
+            title: '錯誤',
+            message: error instanceof Error ? error.message : '取消請假失敗',
+            onConfirm: () => {
+              setAlertConfig(prev => ({ ...prev, isOpen: false }));
+            },
+            onCancel: () => {
+              setAlertConfig(prev => ({ ...prev, isOpen: false }));
+            },
+            type: 'error'
+          });
+        }
       },
       onCancel: () => {
         setAlertConfig(prev => ({ ...prev, isOpen: false }));
@@ -167,52 +215,61 @@ const Leave = () => {
   };
 
   const columns = [
+    { key: 'id', title: 'ID' },
     { key: 'account', title: '員工帳號' },
     { key: 'accountName', title: '員工姓名' },
     { key: 'startDateTime', title: '開始時間' },
     { key: 'endDateTime', title: '結束時間' },
     { key: 'reason', title: '請假原因' },
-    { key: 'proxyName', title: '代理人' },
+    { key: 'proxyaccount', title: '代理人帳號' },
+    { key: 'proxyName', title: '代理人姓名' },
     {
       key: 'actions',
       title: '操作',
-      render: (value: any, record: any) => (
-        <button
-          onClick={() => handleDelete(record.account, record.startDateTime.split('T')[0])}
-          className={styles.cancelButton}
-        >
-          取消
-        </button>
-      )
+      render: (record: any) => {
+        // 檢查 record 是否有效
+        if (!record || typeof record.id === 'undefined') {
+          console.error('無效的記錄:', record);
+          return (
+            <span className={styles.errorText}>無效記錄</span>
+          );
+        }
+
+        return (
+          <button
+            onClick={() => handleDelete(record.id, record.accountName || record.account)}
+            className={styles.cancelButton}
+            disabled={isLoading}
+          >
+            {isLoading ? '處理中...' : '取消請假'}
+          </button>
+        );
+      }
     }
   ];
 
   return (
     <div className={styles.container}>
-      {/* <h2>請假管理</h2> */}
+      <div className={styles.header}>
+        <h2>請假管理</h2>
+      </div>
       
-      {/* 操作區域 */}
       <div className={styles.actionBar}>
         <div className={styles.leftActions}>
           <div className={styles.dateRangeFilter}>
-            <div className={styles.dateFilter}>
-              <span>開始日期:</span>
-              <input
-                type="date"
-                value={dateRange.startDate}
-                onChange={(e) => setDateRange(prev => ({ ...prev, startDate: e.target.value }))}
-                className={styles.dateInput}
-              />
-            </div>
-            <div className={styles.dateFilter}>
-              <span>結束日期:</span>
-              <input
-                type="date"
-                value={dateRange.endDate}
-                onChange={(e) => setDateRange(prev => ({ ...prev, endDate: e.target.value }))}
-                className={styles.dateInput}
-              />
-            </div>
+            <input
+              type="date"
+              value={dateRange.startDate}
+              onChange={(e) => setDateRange(prev => ({ ...prev, startDate: e.target.value }))}
+              className={styles.dateInput}
+            />
+            <span>到</span>
+            <input
+              type="date"
+              value={dateRange.endDate}
+              onChange={(e) => setDateRange(prev => ({ ...prev, endDate: e.target.value }))}
+              className={styles.dateInput}
+            />
             <button 
               onClick={handleDateRangeSearch}
               className={styles.searchButton}
@@ -224,9 +281,10 @@ const Leave = () => {
         </div>
         
         <div className={styles.rightActions}>
-          <button 
+          <button
             onClick={handleOpenModal}
             className={styles.addButton}
+            disabled={isLoadingColleagues}
           >
             新增請假
           </button>

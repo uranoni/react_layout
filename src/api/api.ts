@@ -227,6 +227,26 @@ export const attendanceAPI = {
       }
       throw error;
     }
+  },
+
+  // 新增取消請假 API
+  cancelLeave: async (id: number) => {
+    try {
+      console.log('發送取消請假請求到 /cancelleave，參數:', { id });
+      const response = await api.post('/cancelleave', { id });
+      console.log('取消請假 API 響應:', response);
+      return response.data;
+    } catch (error) {
+      console.error('取消請假失敗:', error);
+      if (axios.isAxiosError(error)) {
+        console.error('請求錯誤詳情:', {
+          status: error.response?.status,
+          data: error.response?.data,
+          headers: error.response?.headers
+        });
+      }
+      throw error;
+    }
   }
 };
 

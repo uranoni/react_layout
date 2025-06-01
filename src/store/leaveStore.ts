@@ -8,13 +8,14 @@ export interface Colleague {
 }
 
 export interface LeaveRecord {
+  id: number;
   account: string;
   startDateTime: string;
   endDateTime: string;
   proxyaccount: string | null;
   reason: string;
-  accountName: string;
-  proxyName: string | null;
+  accountName?: string;
+  proxyName?: string | null;
 }
 
 export interface LeaveRequest {
@@ -41,6 +42,7 @@ interface LeaveState {
   fetchLeaveRecords: (startDate: string, endDate: string) => Promise<void>;
   addLeaveRecord: (record: Omit<LeaveRecord, 'id'>) => Promise<void>;
   removeLeaveRecord: (account: string, date: string) => Promise<void>;
+  cancelLeave: (id: number) => Promise<void>;
   fetchColleagues: () => Promise<void>;
   submitLeave: (leaveData: LeaveRequest) => Promise<void>;
   clearError: () => void;
@@ -75,13 +77,14 @@ export const useLeaveStore = create<LeaveState>((set, get) => ({
       
       // 確保資料格式正確
       const formattedRecords = records.map((record: any) => ({
+        id: record.id,
         account: record.account,
         startDateTime: record.startDateTime,
         endDateTime: record.endDateTime,
         proxyaccount: record.proxyaccount || null,
         reason: record.reason,
-        accountName: record.accountName,
-        proxyName: record.proxyName || null
+        accountName: record.accountName || record.account,
+        proxyName: record.proxyName || record.proxyaccount || null
       }));
       
       set({ leaveRecords: formattedRecords });
@@ -98,7 +101,7 @@ export const useLeaveStore = create<LeaveState>((set, get) => ({
   addLeaveRecord: async (record: Omit<LeaveRecord, 'id'>) => {
     set({ isLoading: true, error: null });
     try {
-      const newRecord = { ...record, id: Date.now().toString() };
+      const newRecord = { ...record, id: Date.now() };
       set(state => ({
         leaveRecords: [...state.leaveRecords, newRecord as LeaveRecord]
       }));
@@ -121,6 +124,26 @@ export const useLeaveStore = create<LeaveState>((set, get) => ({
       }));
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : '刪除請假記錄失敗';
+      set({ error: errorMessage });
+      throw error;
+    } finally {
+      set({ isLoading: false });
+    }
+  },
+
+  cancelLeave: async (id: number) => {
+    set({ isLoading: true, error: null });
+    try {
+      console.log('取消請假，ID:', id);
+      await attendanceAPI.cancelLeave(id);
+      
+      // 從本地狀態中移除該記錄
+      set(state => ({
+        leaveRecords: state.leaveRecords.filter(record => record.id !== id)
+      }));
+    } catch (error) {
+      console.error('取消請假失敗:', error);
+      const errorMessage = error instanceof Error ? error.message : '取消請假失敗';
       set({ error: errorMessage });
       throw error;
     } finally {
