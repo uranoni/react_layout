@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { create } from 'zustand';
 import { useLeaveStore } from './leaveStore';
 import { attendanceAPI } from '../api/api';

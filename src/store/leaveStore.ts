@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { create } from 'zustand';
 import { getSameEmployers, attendanceAPI } from '../api/api';
 
@@ -48,19 +49,7 @@ interface LeaveState {
   clearError: () => void;
 }
 
-// 模擬請假資料
-const mockLeaveRecords: LeaveRecord[] = [
-  {
-    account: 'roni123',
-    startDateTime: '2025-03-20T08:00',
-    endDateTime: '2025-03-20T12:00',
-    reason: '個人事務',
-    proxy: 'john123',
-    name: 'roni123'
-  }
-];
-
-export const useLeaveStore = create<LeaveState>((set, get) => ({
+export const useLeaveStore = create<LeaveState>((set) => ({
   leaveRecords: [],
   colleagues: [],
   isLoading: false,

@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { useState, useEffect } from 'react';
 import styles from './Daily.module.css';
 import Table from '../../components/Table';

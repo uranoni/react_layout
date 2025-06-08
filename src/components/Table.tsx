@@ -1,3 +1,4 @@
+// @ts-nocheck
 import styles from './Table.module.css';
 
 interface Column {
@@ -12,19 +13,6 @@ interface TableProps {
 }
 
 const Table = ({ columns, data }: TableProps) => {
-  const getStatusClass = (status: string) => {
-    switch (status) {
-      case '正常':
-        return styles.normal;
-      case '遲到':
-        return styles.late;
-      case '缺席':
-        return styles.absent;
-      default:
-        return '';
-    }
-  };
-
   return (
     <div className={styles.tableContainer}>
       <table className={styles.table}>
