@@ -4,17 +4,17 @@ import useAuthStore from '../store/useAuthStore';
 
 interface PrivateRouteProps {
   element: React.ReactElement;
+  requireSSO?: boolean;
 }
 
-const PrivateRoute = ({ element }: PrivateRouteProps) => {
-  const { isAuthenticated, checkAuth } = useAuthStore();
+const PrivateRoute = ({ element, requireSSO = false }: PrivateRouteProps) => {
+  const { isAuthenticated, authType, checkAuth } = useAuthStore();
   const [isChecking, setIsChecking] = useState(true);
   const location = useLocation();
 
   useEffect(() => {
     const verifyAuth = async () => {
       if (!isAuthenticated) {
-        // 嘗試刷新 token
         await checkAuth();
       }
       setIsChecking(false);
@@ -24,8 +24,12 @@ const PrivateRoute = ({ element }: PrivateRouteProps) => {
   }, [isAuthenticated, checkAuth]);
 
   if (isChecking) {
-    // 可以顯示載入中的畫面
     return <div>載入中...</div>;
+  }
+
+  // 檢查是否需要 SSO 但當前是 local 認證
+  if (requireSSO && authType !== 'sso') {
+    return <Navigate to="/sso-login" state={{ from: location }} replace />;
   }
 
   return isAuthenticated ? 

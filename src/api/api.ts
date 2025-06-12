@@ -1,4 +1,5 @@
 import axios, { AxiosError, AxiosRequestConfig } from 'axios';
+import { keycloakConfig } from '../config/keycloak.config';
 
 // 創建 axios 實例
 const api = axios.create({
@@ -89,14 +90,33 @@ api.interceptors.response.use(
 
 // API 方法
 export const authAPI = {
-  login: async (useraccount: string, password: string) => {
-    const response = await api.post('/login', { useraccount, password });
-    const { accessToken, refreshToken, user } = response.data;
-    
-    // 將 token 存儲到 localStorage
-    setTokens(accessToken, refreshToken);
-    
-    return { user };
+  // 本地登入
+  login: async (username: string, password: string) => {
+    const response = await api.post('/login', { username, password });
+    return response.data;
+  },
+
+  // SSO 登入
+  ssoLogin: async () => {
+    const sso_token = localStorage.getItem('sso_accesstoken');
+    const response = await api.get('/sso_token', {
+      headers: {
+        'sso_url': keycloakConfig.url,
+        'sso_authorization': sso_token,
+        'sso_access_token': sso_token
+      }
+    });
+    return response.data;
+  },
+
+  // 獲取應用程式 tokens
+  getAppTokens: async (headers: {
+    sso_url: string;
+    sso_authorization: string;
+    sso_access_token: string;
+  }) => {
+    const response = await api.get('/sso_token', { headers });
+    return response.data;
   },
   
   refresh: async () => {
