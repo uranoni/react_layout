@@ -7,6 +7,7 @@ import Leave from '../pages/attendance/Leave';
 import LoginPage from '../pages/LoginPage';
 import NotFoundPage from '../pages/NotFoundPage';
 import PrivateRoute from './PrivateRoute';
+import CallbackSSO from '../pages/CallbackSSO';
 
 export const router = createBrowserRouter([
   {
@@ -36,6 +37,10 @@ export const router = createBrowserRouter([
   {
     path: '/login',
     element: <LoginPage />
+  },
+  {
+    path: '/callback-sso',
+    element: <CallbackSSO />
   },
   {
     path: '*',

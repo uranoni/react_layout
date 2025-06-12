@@ -19,7 +19,26 @@ interface AuthState {
   logout: () => Promise<void>;
   setUser: (user: User) => void;
   checkAuth: () => Promise<boolean>;
+  clearAllTokens: () => void;
 }
+
+// 預登入狀態鍵值
+const PRE_LOGIN_TYPE_KEY = 'preLoginType';
+
+// 設置預登入類型
+const setPreLoginType = (type: 'local' | 'sso' | null) => {
+  if (type) {
+    localStorage.setItem(PRE_LOGIN_TYPE_KEY, type);
+  } else {
+    localStorage.removeItem(PRE_LOGIN_TYPE_KEY);
+  }
+};
+
+// 獲取預登入類型
+const getPreLoginType = (): 'local' | 'sso' | null => {
+  const type = localStorage.getItem(PRE_LOGIN_TYPE_KEY);
+  return type as 'local' | 'sso' | null;
+};
 
 // 檢查是否有有效的 token
 const hasValidTokens = () => {
@@ -28,25 +47,80 @@ const hasValidTokens = () => {
   return !!accessToken && !!refreshToken;
 };
 
-// 獲取認證類型
-const getAuthType = () => {
-  if (localStorage.getItem('sso_idtoken')) return 'sso';
-  if (localStorage.getItem('accessToken')) return 'local';
+// 改進的認證類型判斷
+const getAuthType = (): 'local' | 'sso' | null => {
+  // 1. 優先使用預登入狀態標記
+  const preLoginType = getPreLoginType();
+  if (preLoginType) {
+    // 驗證對應的 tokens 是否存在
+    if (preLoginType === 'sso') {
+      const ssoIdToken = localStorage.getItem('sso_idtoken');
+      const ssoAccessToken = localStorage.getItem('sso_accesstoken');
+      const accessToken = localStorage.getItem('accessToken');
+      if (ssoIdToken && ssoAccessToken && accessToken) {
+        return 'sso';
+      }
+    } else if (preLoginType === 'local') {
+      const accessToken = localStorage.getItem('accessToken');
+      const refreshToken = localStorage.getItem('refreshToken');
+      const ssoIdToken = localStorage.getItem('sso_idtoken');
+      if (accessToken && refreshToken && !ssoIdToken) {
+        return 'local';
+      }
+    }
+  }
+  
+  // 2. 如果預登入狀態無效，清除標記並回退到原邏輯
+  setPreLoginType(null);
+  
+  // 3. 回退到基於 tokens 的判斷（但較不可靠）
+  if (localStorage.getItem('sso_idtoken') && localStorage.getItem('sso_accesstoken')) {
+    return 'sso';
+  }
+  if (localStorage.getItem('accessToken') && localStorage.getItem('refreshToken')) {
+    return 'local';
+  }
+  
   return null;
 };
 
-export const useAuthStore = create<AuthState>((set) => ({
+export const useAuthStore = create<AuthState>((set, get) => ({
   isAuthenticated: hasValidTokens(),
   user: null,
   authType: getAuthType(),
   
+  // 清除所有 tokens 的輔助函數
+  clearAllTokens: () => {
+    localStorage.removeItem('accessToken');
+    localStorage.removeItem('refreshToken');
+    localStorage.removeItem('sso_idtoken');
+    localStorage.removeItem('sso_accesstoken');
+    localStorage.removeItem('sso_refreshtoken');
+    setPreLoginType(null); // 清除預登入狀態
+  },
+  
   login: async (username: string, password: string) => {
     try {
-      const { user, accessToken, refreshToken } = await authAPI.login(username, password);
+      // 在本地登入前，先清除任何現有的認證狀態
+      const { clearAllTokens } = get();
+      clearAllTokens();
       
-      // 存儲 local 認證 token
+      const response = await authAPI.login(username, password);
+      const { accessToken, refreshToken } = response;
+      
+      // 安全檢查使用者資訊，提供預設值
+      const user = response.user || {
+        id: '',
+        username: username || '',
+        name: '',
+        email: '',
+        role: 'user'
+      };
+      
+      // 儲存本地認證 token（不儲存 SSO tokens）
       localStorage.setItem('accessToken', accessToken);
       localStorage.setItem('refreshToken', refreshToken);
+      setPreLoginType('local'); // 設置預登入狀態為本地登入
       
       set({ 
         isAuthenticated: true, 
@@ -54,18 +128,33 @@ export const useAuthStore = create<AuthState>((set) => ({
         authType: 'local'
       });
     } catch (error) {
-      console.error('Login failed:', error);
+      console.error('本地登入失敗:', error);
       throw error;
     }
   },
   
   ssoLogin: async () => {
     try {
-      const { user, accessToken, refreshToken } = await authAPI.ssoLogin();
+      // 在 SSO 登入前，先清除任何現有的本地認證狀態（但保留 SSO tokens）
+      localStorage.removeItem('accessToken');
+      localStorage.removeItem('refreshToken');
       
-      // 存儲應用程式的 token
+      const response = await authAPI.ssoLogin();
+      const { accessToken, refreshToken } = response;
+      
+      // 安全檢查使用者資訊，提供預設值
+      const user = response.user || {
+        id: '',
+        username: '',
+        name: '',
+        email: '',
+        role: 'user'
+      };
+      
+      // 儲存應用程式的 token（SSO tokens 已經在 CallbackSSO 或 useKeycloak 中儲存）
       localStorage.setItem('accessToken', accessToken);
       localStorage.setItem('refreshToken', refreshToken);
+      setPreLoginType('sso'); // 設置預登入狀態為 SSO 登入
       
       set({ 
         isAuthenticated: true, 
@@ -73,29 +162,27 @@ export const useAuthStore = create<AuthState>((set) => ({
         authType: 'sso'
       });
     } catch (error) {
-      console.error('SSO login failed:', error);
+      console.error('SSO 登入失敗:', error);
       throw error;
     }
   },
   
   logout: async () => {
     try {
-      const authType = getAuthType();
+      // 呼叫後端登出 API
+      await authAPI.logout();
       
-      if (authType === 'sso') {
-        // 清除 SSO tokens
-        localStorage.removeItem('sso_idtoken');
-        localStorage.removeItem('sso_accesstoken');
-        localStorage.removeItem('sso_refreshtoken');
-      }
-      
-      // 清除應用程式的 tokens
-      localStorage.removeItem('accessToken');
-      localStorage.removeItem('refreshToken');
+      // 清除所有 tokens 和預登入狀態
+      const { clearAllTokens } = get();
+      clearAllTokens();
       
       set({ isAuthenticated: false, user: null, authType: null });
     } catch (error) {
-      console.error('Logout failed:', error);
+      console.error('登出失敗:', error);
+      // 即使登出失敗，也要清除本地 tokens
+      const { clearAllTokens } = get();
+      clearAllTokens();
+      set({ isAuthenticated: false, user: null, authType: null });
       throw error;
     }
   },
@@ -105,19 +192,111 @@ export const useAuthStore = create<AuthState>((set) => ({
   },
   
   checkAuth: async () => {
+    const authType = getAuthType();
+    
     if (!hasValidTokens()) {
+      // 清除所有狀態包括預登入狀態
+      const { clearAllTokens } = get();
+      clearAllTokens();
       set({ isAuthenticated: false, user: null, authType: null });
       return false;
     }
     
     try {
-      const result = await authAPI.refresh();
-      if (result) {
-        set({ isAuthenticated: true });
-        return true;
+      if (authType === 'sso') {
+        // SSO 認證：檢查 SSO tokens 是否存在且有效
+        const ssoIdToken = localStorage.getItem('sso_idtoken');
+        const ssoAccessToken = localStorage.getItem('sso_accesstoken');
+        const ssoRefreshToken = localStorage.getItem('sso_refreshtoken');
+        
+        if (!ssoIdToken || !ssoAccessToken || !ssoRefreshToken) {
+          // 如果 SSO tokens 不完整，清除所有 tokens
+          const { clearAllTokens } = get();
+          clearAllTokens();
+          set({ isAuthenticated: false, user: null, authType: null });
+          return false;
+        }
+        
+        // 嘗試刷新應用程式 token
+        try {
+          const result = await authAPI.refresh();
+          if (result && result.user) {
+            // 安全檢查使用者資訊
+            const user = result.user || {
+              id: '',
+              username: '',
+              name: '',
+              email: '',
+              role: 'user'
+            };
+            
+            set({ 
+              isAuthenticated: true,
+              user: { ...user, authType: 'sso' },
+              authType: 'sso'
+            });
+            return true;
+          } else {
+            // 如果應用程式 token 刷新失敗，重新獲取
+            const response = await authAPI.ssoLogin();
+            const { accessToken, refreshToken } = response;
+            
+            // 安全檢查使用者資訊
+            const user = response.user || {
+              id: '',
+              username: '',
+              name: '',
+              email: '',
+              role: 'user'
+            };
+            
+            localStorage.setItem('accessToken', accessToken);
+            localStorage.setItem('refreshToken', refreshToken);
+            
+            set({ 
+              isAuthenticated: true,
+              user: { ...user, authType: 'sso' },
+              authType: 'sso'
+            });
+            return true;
+          }
+        } catch (error) {
+          console.error('SSO 應用程式 token 刷新失敗:', error);
+          throw error;
+        }
+      } else if (authType === 'local') {
+        // 本地認證：使用應用程式的 refresh token
+        const result = await authAPI.refresh();
+        if (result && result.user) {
+          // 安全檢查使用者資訊
+          const user = result.user || {
+            id: '',
+            username: '',
+            name: '',
+            email: '',
+            role: 'user'
+          };
+          
+          set({ 
+            isAuthenticated: true,
+            user: { ...user, authType: 'local' },
+            authType: 'local'
+          });
+          return true;
+        }
+        return false;
+      } else {
+        // 無法確定認證類型，清除所有 tokens
+        const { clearAllTokens } = get();
+        clearAllTokens();
+        set({ isAuthenticated: false, user: null, authType: null });
+        return false;
       }
-      return false;
     } catch (error) {
+      console.error('認證檢查失敗:', error);
+      // 清除所有 tokens 並重設狀態
+      const { clearAllTokens } = get();
+      clearAllTokens();
       set({ isAuthenticated: false, user: null, authType: null });
       return false;
     }

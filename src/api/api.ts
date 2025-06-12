@@ -98,22 +98,33 @@ export const authAPI = {
 
   // SSO 登入
   ssoLogin: async () => {
-    const sso_token = localStorage.getItem('sso_accesstoken');
+    // 从 localStorage 获取 SSO tokens
+    const sso_idtoken = localStorage.getItem('sso_idtoken');
+    const sso_accesstoken = localStorage.getItem('sso_accesstoken');
+    const sso_refreshtoken = localStorage.getItem('sso_refreshtoken');
+
+    if (!sso_idtoken || !sso_accesstoken || !sso_refreshtoken) {
+      throw new Error('SSO tokens not found');
+    }
+
+    // 使用 SSO tokens 获取应用 tokens
     const response = await api.get('/sso_token', {
       headers: {
         'sso_url': keycloakConfig.url,
-        'sso_authorization': sso_token,
-        'sso_access_token': sso_token
+        'sso_idtoken': sso_idtoken,
+        'sso_accesstoken': sso_accesstoken,
+        'sso_refreshtoken': sso_refreshtoken
       }
     });
     return response.data;
   },
 
-  // 獲取應用程式 tokens
+  // 获取应用程式 tokens
   getAppTokens: async (headers: {
     sso_url: string;
-    sso_authorization: string;
-    sso_access_token: string;
+    sso_idtoken: string;
+    sso_accesstoken: string;
+    sso_refreshtoken: string;
   }) => {
     const response = await api.get('/sso_token', { headers });
     return response.data;
