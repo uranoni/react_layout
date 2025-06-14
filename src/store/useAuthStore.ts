@@ -42,9 +42,25 @@ const getPreLoginType = (): 'local' | 'sso' | null => {
 
 // 檢查是否有有效的 token
 const hasValidTokens = () => {
-  const accessToken = localStorage.getItem('accessToken');
-  const refreshToken = localStorage.getItem('refreshToken');
+  const accessToken = localStorage.getItem('access_token');
+  const refreshToken = localStorage.getItem('refresh_token');
   return !!accessToken && !!refreshToken;
+};
+
+// 從 localStorage 获取 token
+const getAccessToken = () => localStorage.getItem('access_token');
+const getRefreshToken = () => localStorage.getItem('refresh_token');
+
+// 设置 token 到 localStorage
+export const setTokens = (accessToken: string, refreshToken: string) => {
+  localStorage.setItem('access_token', accessToken);
+  localStorage.setItem('refresh_token', refreshToken);
+};
+
+// 清除 token
+export const clearTokens = () => {
+  localStorage.removeItem('access_token');
+  localStorage.removeItem('refresh_token');
 };
 
 // 改進的認證類型判斷
@@ -56,13 +72,13 @@ const getAuthType = (): 'local' | 'sso' | null => {
     if (preLoginType === 'sso') {
       const ssoIdToken = localStorage.getItem('sso_idtoken');
       const ssoAccessToken = localStorage.getItem('sso_accesstoken');
-      const accessToken = localStorage.getItem('accessToken');
+      const accessToken = localStorage.getItem('access_token');
       if (ssoIdToken && ssoAccessToken && accessToken) {
         return 'sso';
       }
     } else if (preLoginType === 'local') {
-      const accessToken = localStorage.getItem('accessToken');
-      const refreshToken = localStorage.getItem('refreshToken');
+      const accessToken = localStorage.getItem('access_token');
+      const refreshToken = localStorage.getItem('refresh_token');
       const ssoIdToken = localStorage.getItem('sso_idtoken');
       if (accessToken && refreshToken && !ssoIdToken) {
         return 'local';
@@ -77,7 +93,7 @@ const getAuthType = (): 'local' | 'sso' | null => {
   if (localStorage.getItem('sso_idtoken') && localStorage.getItem('sso_accesstoken')) {
     return 'sso';
   }
-  if (localStorage.getItem('accessToken') && localStorage.getItem('refreshToken')) {
+  if (localStorage.getItem('access_token') && localStorage.getItem('refresh_token')) {
     return 'local';
   }
   
@@ -91,8 +107,8 @@ export const useAuthStore = create<AuthState>((set, get) => ({
   
   // 清除所有 tokens 的輔助函數
   clearAllTokens: () => {
-    localStorage.removeItem('accessToken');
-    localStorage.removeItem('refreshToken');
+    localStorage.removeItem('access_token');
+    localStorage.removeItem('refresh_token');
     localStorage.removeItem('sso_idtoken');
     localStorage.removeItem('sso_accesstoken');
     localStorage.removeItem('sso_refreshtoken');
@@ -118,8 +134,8 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       };
       
       // 儲存本地認證 token（不儲存 SSO tokens）
-      localStorage.setItem('accessToken', accessToken);
-      localStorage.setItem('refreshToken', refreshToken);
+      localStorage.setItem('access_token', accessToken);
+      localStorage.setItem('refresh_token', refreshToken);
       setPreLoginType('local'); // 設置預登入狀態為本地登入
       
       set({ 
@@ -136,8 +152,8 @@ export const useAuthStore = create<AuthState>((set, get) => ({
   ssoLogin: async () => {
     try {
       // 在 SSO 登入前，先清除任何現有的本地認證狀態（但保留 SSO tokens）
-      localStorage.removeItem('accessToken');
-      localStorage.removeItem('refreshToken');
+      localStorage.removeItem('access_token');
+      localStorage.removeItem('refresh_token');
       
       const response = await authAPI.ssoLogin();
       const { accessToken, refreshToken } = response;
@@ -152,8 +168,8 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       };
       
       // 儲存應用程式的 token（SSO tokens 已經在 CallbackSSO 或 useKeycloak 中儲存）
-      localStorage.setItem('accessToken', accessToken);
-      localStorage.setItem('refreshToken', refreshToken);
+      localStorage.setItem('access_token', accessToken);
+      localStorage.setItem('refresh_token', refreshToken);
       setPreLoginType('sso'); // 設置預登入狀態為 SSO 登入
       
       set({ 
@@ -250,8 +266,8 @@ export const useAuthStore = create<AuthState>((set, get) => ({
               role: 'user'
             };
             
-            localStorage.setItem('accessToken', accessToken);
-            localStorage.setItem('refreshToken', refreshToken);
+            localStorage.setItem('access_token', accessToken);
+            localStorage.setItem('refresh_token', refreshToken);
             
             set({ 
               isAuthenticated: true,

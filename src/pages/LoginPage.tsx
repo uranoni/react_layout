@@ -49,16 +49,6 @@ const LoginPage = () => {
   return (
     <div className={styles.container}>
       <div className={styles.loginOptions}>
-        <button 
-          className={styles.ssoButton}
-          onClick={handleSSOLogin}
-          disabled={isLoading}
-        >
-          {isLoading ? '登入中...' : '使用 SSO 登入'}
-        </button>
-        
-        <div className={styles.divider}>或</div>
-        
         <form className={styles.form} onSubmit={handleLocalLogin}>
           {error && <div className={styles.errorMessage}>{error}</div>}
           
@@ -92,6 +82,20 @@ const LoginPage = () => {
             {isLoading ? '登入中...' : '本地登入'}
           </button>
         </form>
+
+        <div className={styles.divider}>
+          <span className={styles.dividerLine}></span>
+          <span className={styles.dividerText}>或</span>
+          <span className={styles.dividerLine}></span>
+        </div>
+
+        <button 
+          className={styles.ssoButton}
+          onClick={handleSSOLogin}
+          disabled={isLoading}
+        >
+          {isLoading ? '登入中...' : '使用 SSO 登入'}
+        </button>
       </div>
     </div>
   );

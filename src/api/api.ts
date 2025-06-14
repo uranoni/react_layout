@@ -53,33 +53,56 @@ api.interceptors.response.use(
       originalRequest._retry = true;
       
       try {
-        // 嘗試刷新 token
-        const refreshToken = getRefreshToken();
-        if (!refreshToken) {
-          throw new Error('No refresh token available');
+        // 檢查是否是 SSO 登入
+        const ssoIdToken = localStorage.getItem('sso_idtoken');
+        const ssoAccessToken = localStorage.getItem('sso_accesstoken');
+        
+        if (ssoIdToken && ssoAccessToken) {
+          // 如果是 SSO 登入，嘗試重新獲取應用 token
+          const response = await authAPI.ssoLogin();
+          const { accessToken, refreshToken } = response;
+          
+          // 更新 localStorage 中的 token
+          setTokens(accessToken, refreshToken);
+          
+          // 更新請求頭並重試
+          originalRequest.headers = {
+            ...originalRequest.headers,
+            Authorization: `Bearer ${accessToken}`,
+          };
+          
+          return api(originalRequest);
+        } else {
+          // 本地登入的情況，嘗試刷新 token
+          const refreshToken = getRefreshToken();
+          if (!refreshToken) {
+            throw new Error('No refresh token available');
+          }
+          
+          const response = await axios.post(`${api.defaults.baseURL}/auth/refresh`, {
+            refreshToken,
+          });
+          
+          const { accessToken, refreshToken: newRefreshToken } = response.data;
+          
+          // 更新 localStorage 中的 token
+          setTokens(accessToken, newRefreshToken);
+          
+          // 更新請求頭並重試
+          originalRequest.headers = {
+            ...originalRequest.headers,
+            Authorization: `Bearer ${accessToken}`,
+          };
+          
+          return api(originalRequest);
         }
-        
-        // 呼叫您的 refresh token API
-        const response = await axios.post(`${api.defaults.baseURL}/auth/refresh`, {
-          refreshToken,
-        });
-        
-        const { accessToken, refreshToken: newRefreshToken } = response.data;
-        
-        // 更新 localStorage 中的 token
-        setTokens(accessToken, newRefreshToken);
-        
-        // 更新請求頭並重試
-        originalRequest.headers = {
-          ...originalRequest.headers,
-          Authorization: `Bearer ${accessToken}`,
-        };
-        
-        return api(originalRequest);
       } catch (refreshError) {
         // 刷新失敗，清除 token
         clearTokens();
-        window.location.href = '/login';
+        // 只有在非 SSO 登入的情況下才重定向到登入頁
+        if (!localStorage.getItem('sso_idtoken')) {
+          window.location.href = '/login';
+        }
         return Promise.reject(refreshError);
       }
     }
