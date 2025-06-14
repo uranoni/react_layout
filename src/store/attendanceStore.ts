@@ -44,6 +44,12 @@ interface AttendanceState {
   batchCheckIn: (eids: string[]) => void;
   batchCancelCheckIn: (eids: string[]) => void;
   fetchSiteCheckReport: (date: string) => Promise<void>;
+  records: AttendanceRecord[];
+  loading: boolean;
+  fetchRecords: (startDate: string, endDate: string) => Promise<void>;
+  createRecord: (record: Omit<AttendanceRecord, 'id'>) => Promise<void>;
+  updateRecord: (id: string, record: Partial<AttendanceRecord>) => Promise<void>;
+  deleteRecord: (id: string) => Promise<void>;
 }
 
 // 註釋掉模擬工程師資料
@@ -210,6 +216,62 @@ export const useAttendanceStore = create<AttendanceState>((set, get) => ({
         error: error instanceof Error ? error.message : '獲取日報表失敗', 
         isLoading: false 
       });
+    }
+  },
+
+  records: [],
+  loading: false,
+
+  // 獲取考勤記錄
+  fetchRecords: async (startDate: string, endDate: string) => {
+    set({ loading: true, error: null });
+    try {
+      const response = await attendanceAPI.getRecords(startDate, endDate);
+      set({ records: response, loading: false });
+    } catch (error) {
+      set({ error: '獲取考勤記錄失敗', loading: false });
+    }
+  },
+
+  // 創建考勤記錄
+  createRecord: async (record) => {
+    set({ loading: true, error: null });
+    try {
+      const response = await attendanceAPI.createRecord(record);
+      set((state) => ({
+        records: [...state.records, response],
+        loading: false
+      }));
+    } catch (error) {
+      set({ error: '創建考勤記錄失敗', loading: false });
+    }
+  },
+
+  // 更新考勤記錄
+  updateRecord: async (id, record) => {
+    set({ loading: true, error: null });
+    try {
+      const response = await attendanceAPI.updateRecord(id, record);
+      set((state) => ({
+        records: state.records.map((r) => (r.id === id ? response : r)),
+        loading: false
+      }));
+    } catch (error) {
+      set({ error: '更新考勤記錄失敗', loading: false });
+    }
+  },
+
+  // 刪除考勤記錄
+  deleteRecord: async (id) => {
+    set({ loading: true, error: null });
+    try {
+      await attendanceAPI.deleteRecord(id);
+      set((state) => ({
+        records: state.records.filter((r) => r.id !== id),
+        loading: false
+      }));
+    } catch (error) {
+      set({ error: '刪除考勤記錄失敗', loading: false });
     }
   }
 }));

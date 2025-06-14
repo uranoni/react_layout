@@ -3,7 +3,7 @@ import { keycloakConfig } from '../config/keycloak.config';
 
 // 創建 axios 實例
 const api = axios.create({
-  baseURL: import.meta.env.VITE_API_URL || 'http://localhost:3000',
+  baseURL: import.meta.env.VITE_APP_URL + '/api',
   timeout: 10000,
   headers: {
     'Content-Type': 'application/json',
@@ -11,19 +11,19 @@ const api = axios.create({
 });
 
 // 從 localStorage 獲取 token
-const getAccessToken = () => localStorage.getItem('accessToken');
-const getRefreshToken = () => localStorage.getItem('refreshToken');
+const getAccessToken = () => localStorage.getItem('access_token');
+const getRefreshToken = () => localStorage.getItem('refresh_token');
 
 // 設置 token 到 localStorage
 export const setTokens = (accessToken: string, refreshToken: string) => {
-  localStorage.setItem('accessToken', accessToken);
-  localStorage.setItem('refreshToken', refreshToken);
+  localStorage.setItem('access_token', accessToken);
+  localStorage.setItem('refresh_token', refreshToken);
 };
 
 // 清除 token
 export const clearTokens = () => {
-  localStorage.removeItem('accessToken');
-  localStorage.removeItem('refreshToken');
+  localStorage.removeItem('access_token');
+  localStorage.removeItem('refresh_token');
 };
 
 // 請求攔截器
@@ -121,7 +121,7 @@ export const authAPI = {
 
   // SSO 登入
   ssoLogin: async () => {
-    // 从 localStorage 获取 SSO tokens
+    // 從 localStorage 獲取 SSO tokens
     const sso_idtoken = localStorage.getItem('sso_idtoken');
     const sso_accesstoken = localStorage.getItem('sso_accesstoken');
     const sso_refreshtoken = localStorage.getItem('sso_refreshtoken');
@@ -130,7 +130,7 @@ export const authAPI = {
       throw new Error('SSO tokens not found');
     }
 
-    // 使用 SSO tokens 获取应用 tokens
+    // 使用 SSO tokens 獲取應用 tokens
     const response = await api.get('/sso_token', {
       headers: {
         'sso_url': keycloakConfig.url,
@@ -142,7 +142,7 @@ export const authAPI = {
     return response.data;
   },
 
-  // 获取应用程式 tokens
+  // 獲取應用程式 tokens
   getAppTokens: async (headers: {
     sso_url: string;
     sso_idtoken: string;
@@ -177,7 +177,7 @@ export const authAPI = {
       try {
         await api.post('/auth/logout', { refreshToken });
       } catch (error) {
-        console.error('Logout API error:', error);
+        console.error('登出 API 錯誤:', error);
       }
     }
     clearTokens();

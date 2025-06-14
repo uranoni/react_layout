@@ -6,6 +6,16 @@ import Alert from '../../components/Alert';
 import { useAttendanceStore } from '../../store/attendanceStore';
 import { useLeaveStore } from '../../store/leaveStore';
 
+// 每日考勤記錄
+interface DailyRecord {
+  id: string;
+  date: string;
+  checkIn: string;
+  checkOut: string;
+  status: 'normal' | 'late' | 'early' | 'absent';
+  note?: string;
+}
+
 const Daily = () => {
   const { 
     attendanceRecords, 
@@ -42,6 +52,55 @@ const Daily = () => {
     onConfirm: () => {},
     type: 'warning' as const
   });
+
+  // 每日考勤記錄列表
+  const [records, setRecords] = useState<DailyRecord[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [date, setDate] = useState(new Date());
+
+  // 獲取考勤記錄
+  const fetchRecords = async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const startDate = format(date, 'yyyy-MM-dd');
+      const endDate = format(date, 'yyyy-MM-dd');
+      const response = await attendanceAPI.getRecords(startDate, endDate);
+      setRecords(response);
+    } catch (error) {
+      setError('獲取考勤記錄失敗');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // 更新考勤記錄
+  const updateRecord = async (id: string, record: Partial<DailyRecord>) => {
+    setLoading(true);
+    setError(null);
+    try {
+      const response = await attendanceAPI.updateRecord(id, record);
+      setRecords(records.map(r => r.id === id ? response : r));
+    } catch (error) {
+      setError('更新考勤記錄失敗');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // 刪除考勤記錄
+  const deleteRecord = async (id: string) => {
+    setLoading(true);
+    setError(null);
+    try {
+      await attendanceAPI.deleteRecord(id);
+      setRecords(records.filter(r => r.id !== id));
+    } catch (error) {
+      setError('刪除考勤記錄失敗');
+    } finally {
+      setLoading(false);
+    }
+  };
 
   // 獲取 API 出勤數據
   useEffect(() => {
