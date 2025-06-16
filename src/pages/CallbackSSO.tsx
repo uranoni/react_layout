@@ -7,14 +7,22 @@ import useAuthStore from '../store/useAuthStore';
 const CallbackSSO = () => {
   const navigate = useNavigate();
   const location = useLocation();
-  const { keycloak } = useKeycloak();
+  const { keycloak, isInitialized, isAuthenticated } = useKeycloak();
   const { setUser } = useAuthStore();
 
   useEffect(() => {
+    // 關鍵修改：等待 Keycloak 初始化完成
+    if (!isInitialized) {
+      console.log('等待 Keycloak 初始化...');
+      return;
+    }
+
     const handleCallback = async () => {
       try {
-        // 檢查是否已認證
-        if (keycloak.authenticated) {
+        // 使用 hook 提供的狀態進行雙重檢查
+        if (isAuthenticated && keycloak.authenticated) {
+          console.log('SSO 認證成功，開始處理 tokens...');
+          
           // 儲存 SSO tokens
           localStorage.setItem('sso_idtoken', keycloak.idToken || '');
           localStorage.setItem('sso_accesstoken', keycloak.token || '');
@@ -43,10 +51,14 @@ const CallbackSSO = () => {
             // 更新使用者資訊
             setUser({ ...user, authType: 'sso' });
 
+            console.log('SSO 登入處理完成，準備重定向...');
+            
             // 重新導向到之前的頁面或首頁
             const from = location.state?.from?.pathname || '/';
             navigate(from, { replace: true });
           } catch (error) {
+            console.error('獲取應用程式 Token 失敗:', error);
+            
             // 清除所有 tokens
             localStorage.removeItem('sso_idtoken');
             localStorage.removeItem('sso_accesstoken');
@@ -66,6 +78,10 @@ const CallbackSSO = () => {
             });
           }
         } else {
+          console.log('認證失敗 - Keycloak 初始化完成但未認證');
+          console.log('isAuthenticated:', isAuthenticated);
+          console.log('keycloak.authenticated:', keycloak.authenticated);
+          
           // 如果認證失敗，重新導向到登入頁
           navigate('/login', { replace: true });
         }
@@ -83,7 +99,7 @@ const CallbackSSO = () => {
     };
 
     handleCallback();
-  }, [keycloak, navigate, location, setUser]);
+  }, [keycloak, isInitialized, isAuthenticated, navigate, location, setUser]);
 
   return (
     <div style={{ 
@@ -92,7 +108,9 @@ const CallbackSSO = () => {
       alignItems: 'center', 
       height: '100vh' 
     }}>
-      <div>正在處理 SSO 登入...</div>
+      <div>
+        {!isInitialized ? '正在初始化 SSO...' : '正在處理 SSO 登入...'}
+      </div>
     </div>
   );
 };

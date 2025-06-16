@@ -1,7 +1,6 @@
 import { useEffect, useState } from 'react';
 import Keycloak from 'keycloak-js';
 import { keycloakConfig } from '../config/keycloak.config';
-import { authAPI } from '../api/api';
 
 const keycloak = new Keycloak(keycloakConfig);
 
@@ -12,36 +11,21 @@ export const useKeycloak = () => {
   useEffect(() => {
     const initKeycloak = async () => {
       try {
+        console.log('開始初始化 Keycloak...');
+        
         const authenticated = await keycloak.init({
           onLoad: 'check-sso',
           redirectUri: window.location.origin + '/callback-sso'
         });
 
-        if (authenticated) {
-          // 儲存 SSO tokens
-          localStorage.setItem('sso_idtoken', keycloak.idToken || '');
-          localStorage.setItem('sso_accesstoken', keycloak.token || '');
-          localStorage.setItem('sso_refreshtoken', keycloak.refreshToken || '');
-
-          // 設置預登入狀態為 SSO
-          localStorage.setItem('preLoginType', 'sso');
-
-          // 獲取應用程式 tokens
-          const response = await authAPI.ssoLogin();
-          const { accessToken, refreshToken } = response;
-          
-          // 如果有使用者資訊則儲存
-          if (response.user) {
-            localStorage.setItem('accessToken', accessToken);
-            localStorage.setItem('refreshToken', refreshToken);
-          }
-        }
-
+        console.log('Keycloak 初始化完成，認證狀態:', authenticated);
+        
         setIsAuthenticated(authenticated);
         setIsInitialized(true);
       } catch (error) {
         console.error('Keycloak 初始化失敗:', error);
         setIsInitialized(true);
+        setIsAuthenticated(false);
       }
     };
 
@@ -64,8 +48,8 @@ export const useKeycloak = () => {
       localStorage.removeItem('sso_idtoken');
       localStorage.removeItem('sso_accesstoken');
       localStorage.removeItem('sso_refreshtoken');
-      localStorage.removeItem('accessToken');
-      localStorage.removeItem('refreshToken');
+      localStorage.removeItem('access_token');
+      localStorage.removeItem('refresh_token');
       localStorage.removeItem('preLoginType');
     } catch (error) {
       console.error('Keycloak 登出失敗:', error);
