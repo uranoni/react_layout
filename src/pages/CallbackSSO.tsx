@@ -34,7 +34,7 @@ const CallbackSSO = () => {
           try {
             // 獲取應用程式 tokens
             const response = await authAPI.ssoLogin();
-            const { accessToken, refreshToken } = response;
+            const { access_token: accessToken, refresh_token: refreshToken } = response;
             
             // 安全檢查使用者資訊，提供預設值
             const user = response.user || {

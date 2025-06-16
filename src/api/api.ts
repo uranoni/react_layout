@@ -10,18 +10,29 @@ const api = axios.create({
   },
 });
 
+// 創建一個不經過攔截器的 axios 實例，專門用於 refresh
+const refreshApi = axios.create({
+  baseURL: import.meta.env.VITE_APP_URL + '/api',
+  timeout: 10000,
+  headers: {
+    'Content-Type': 'application/json',
+  },
+});
+
 // 從 localStorage 獲取 token
 const getAccessToken = () => localStorage.getItem('access_token');
 const getRefreshToken = () => localStorage.getItem('refresh_token');
 
 // 設置 token 到 localStorage
 export const setTokens = (accessToken: string, refreshToken: string) => {
+  console.log('設置 tokens:', { accessToken: accessToken ? 'exists' : 'null', refreshToken: refreshToken ? 'exists' : 'null' });
   localStorage.setItem('access_token', accessToken);
   localStorage.setItem('refresh_token', refreshToken);
 };
 
 // 清除 token
 export const clearTokens = () => {
+  console.log('清除所有 tokens');
   localStorage.removeItem('access_token');
   localStorage.removeItem('refresh_token');
 };
@@ -51,16 +62,30 @@ api.interceptors.response.use(
     // 如果是 401 錯誤且不是重試請求
     if (error.response?.status === 401 && !originalRequest._retry) {
       originalRequest._retry = true;
+      console.log('收到 401 錯誤，嘗試刷新 token');
       
       try {
         // 檢查是否是 SSO 登入
         const ssoIdToken = localStorage.getItem('sso_idtoken');
         const ssoAccessToken = localStorage.getItem('sso_accesstoken');
         
+        console.log('檢查 SSO 狀態:', { 
+          hasSsoIdToken: !!ssoIdToken, 
+          hasSsoAccessToken: !!ssoAccessToken 
+        });
+        
         if (ssoIdToken && ssoAccessToken) {
+          console.log('SSO 登入 - 重新獲取應用 token');
           // 如果是 SSO 登入，嘗試重新獲取應用 token
           const response = await authAPI.ssoLogin();
-          const { accessToken, refreshToken } = response;
+          console.log('SSO 登入響應:', response);
+          
+          const { access_token: accessToken, refresh_token: refreshToken } = response;
+          
+          if (!accessToken || !refreshToken) {
+            console.error('SSO 登入響應缺少必要的 tokens:', { accessToken, refreshToken });
+            throw new Error('SSO 登入響應缺少必要的 tokens');
+          }
           
           // 更新 localStorage 中的 token
           setTokens(accessToken, refreshToken);
@@ -73,35 +98,35 @@ api.interceptors.response.use(
           
           return api(originalRequest);
         } else {
-          // 本地登入的情況，嘗試刷新 token
-          const refreshToken = getRefreshToken();
-          if (!refreshToken) {
-            throw new Error('No refresh token available');
+          console.log('本地登入 - 使用 refresh token');
+          // 本地登入的情況，使用統一的 refresh 函數
+          const refreshResult = await authAPI.refresh();
+          
+          if (!refreshResult || !refreshResult.access_token || !refreshResult.refresh_token) {
+            console.error('Refresh token 失敗或響應無效');
+            throw new Error('Refresh token failed');
           }
           
-          const response = await axios.post(`${api.defaults.baseURL}/auth/refresh`, {
-            refreshToken,
-          });
-          
-          const { accessToken, refreshToken: newRefreshToken } = response.data;
-          
-          // 更新 localStorage 中的 token
-          setTokens(accessToken, newRefreshToken);
+          console.log('本地登入 - refresh token 成功');
           
           // 更新請求頭並重試
           originalRequest.headers = {
             ...originalRequest.headers,
-            Authorization: `Bearer ${accessToken}`,
+            Authorization: `Bearer ${refreshResult.access_token}`,
           };
           
           return api(originalRequest);
         }
       } catch (refreshError) {
+        console.error('Token 刷新失敗:', refreshError);
         // 刷新失敗，清除 token
         clearTokens();
         // 只有在非 SSO 登入的情況下才重定向到登入頁
         if (!localStorage.getItem('sso_idtoken')) {
+          console.log('重定向到登入頁');
           window.location.href = '/login';
+        } else {
+          console.log('SSO 登入失敗，但不重定向到登入頁');
         }
         return Promise.reject(refreshError);
       }
@@ -155,17 +180,34 @@ export const authAPI = {
   
   refresh: async () => {
     const refreshToken = getRefreshToken();
-    if (!refreshToken) return null;
+    console.log('authAPI.refresh 被調用，refresh token:', refreshToken ? 'exists' : 'null');
+    
+    if (!refreshToken) {
+      console.log('authAPI.refresh: 沒有 refresh token，返回 null');
+      return null;
+    }
     
     try {
-      const response = await api.post('/auth/refresh', { refreshToken });
-      const { accessToken, refreshToken: newRefreshToken, user } = response.data;
+      console.log('authAPI.refresh: 發送 refresh 請求');
+      // 使用不經過攔截器的 refreshApi 避免循環調用
+      const response = await refreshApi.post('/auth/refresh', { refreshToken });
+      console.log('authAPI.refresh: 收到響應:', response.data);
+      
+      const { access_token, refresh_token, user } = response.data;
+      
+      if (!access_token || !refresh_token) {
+        console.error('authAPI.refresh: 響應缺少必要的 tokens:', { access_token, refresh_token });
+        throw new Error('Refresh 響應缺少必要的 tokens');
+      }
       
       // 更新 localStorage 中的 token
-      setTokens(accessToken, newRefreshToken);
+      setTokens(access_token, refresh_token);
       
-      return { user };
+      console.log('authAPI.refresh: 成功更新 tokens');
+      // 返回底線格式的欄位名稱，與 localStorage key 一致
+      return { access_token, refresh_token, user };
     } catch (error) {
+      console.error('authAPI.refresh: 刷新失敗:', error);
       clearTokens();
       return null;
     }

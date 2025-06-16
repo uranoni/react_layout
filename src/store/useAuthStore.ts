@@ -122,7 +122,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       clearAllTokens();
       
       const response = await authAPI.login(username, password);
-      const { accessToken, refreshToken } = response;
+      const { access_token: accessToken, refresh_token: refreshToken } = response;
       
       // 安全檢查使用者資訊，提供預設值
       const user = response.user || {
@@ -156,7 +156,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       localStorage.removeItem('refresh_token');
       
       const response = await authAPI.ssoLogin();
-      const { accessToken, refreshToken } = response;
+      const { access_token: accessToken, refresh_token: refreshToken } = response;
       
       // 安全檢查使用者資訊，提供預設值
       const user = response.user || {
@@ -236,9 +236,31 @@ export const useAuthStore = create<AuthState>((set, get) => ({
         // 嘗試刷新應用程式 token
         try {
           const result = await authAPI.refresh();
-          if (result && result.user) {
-            // 安全檢查使用者資訊
-            const user = result.user || {
+          // 修正：只檢查 tokens，user 資訊可選
+          if (result && result.access_token && result.refresh_token) {
+            // 處理用戶資訊
+            let user = result.user;
+            
+            // 如果 refresh API 沒有返回 user 資訊，嘗試獲取用戶資料
+            if (!user) {
+              try {
+                console.log('Refresh API 沒有返回 user 資訊，嘗試獲取用戶資料');
+                user = await authAPI.getUserProfile();
+              } catch (profileError) {
+                console.warn('獲取用戶資料失敗，使用預設值:', profileError);
+                // 使用預設值
+                user = {
+                  id: '',
+                  username: '',
+                  name: '',
+                  email: '',
+                  role: 'user'
+                };
+              }
+            }
+            
+            // 安全檢查使用者資訊，提供預設值
+            const safeUser = user || {
               id: '',
               username: '',
               name: '',
@@ -248,14 +270,14 @@ export const useAuthStore = create<AuthState>((set, get) => ({
             
             set({ 
               isAuthenticated: true,
-              user: { ...user, authType: 'sso' },
+              user: { ...safeUser, authType: 'sso' },
               authType: 'sso'
             });
             return true;
           } else {
             // 如果應用程式 token 刷新失敗，重新獲取
             const response = await authAPI.ssoLogin();
-            const { accessToken, refreshToken } = response;
+            const { access_token: accessToken, refresh_token: refreshToken } = response;
             
             // 安全檢查使用者資訊
             const user = response.user || {
@@ -283,9 +305,31 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       } else if (authType === 'local') {
         // 本地認證：使用應用程式的 refresh token
         const result = await authAPI.refresh();
-        if (result && result.user) {
-          // 安全檢查使用者資訊
-          const user = result.user || {
+        // 修正：只檢查 tokens，user 資訊可選
+        if (result && result.access_token && result.refresh_token) {
+          // 處理用戶資訊
+          let user = result.user;
+          
+          // 如果 refresh API 沒有返回 user 資訊，嘗試獲取用戶資料
+          if (!user) {
+            try {
+              console.log('Refresh API 沒有返回 user 資訊，嘗試獲取用戶資料');
+              user = await authAPI.getUserProfile();
+            } catch (profileError) {
+              console.warn('獲取用戶資料失敗，使用預設值:', profileError);
+              // 使用預設值
+              user = {
+                id: '',
+                username: '',
+                name: '',
+                email: '',
+                role: 'user'
+              };
+            }
+          }
+          
+          // 安全檢查使用者資訊，提供預設值
+          const safeUser = user || {
             id: '',
             username: '',
             name: '',
@@ -295,7 +339,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
           
           set({ 
             isAuthenticated: true,
-            user: { ...user, authType: 'local' },
+            user: { ...safeUser, authType: 'local' },
             authType: 'local'
           });
           return true;
