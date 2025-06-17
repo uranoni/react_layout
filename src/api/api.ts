@@ -1,6 +1,13 @@
 import axios, { AxiosError, AxiosRequestConfig } from 'axios';
 import { keycloakConfig } from '../config/keycloak.config';
 
+// 為 window 物件添加 Keycloak 實例的類型聲明
+declare global {
+  interface Window {
+    __keycloak_instance?: any;
+  }
+}
+
 // 創建 axios 實例
 const api = axios.create({
   baseURL: import.meta.env.VITE_APP_URL + '/api',
@@ -35,6 +42,37 @@ export const clearTokens = () => {
   console.log('清除所有 tokens');
   localStorage.removeItem('access_token');
   localStorage.removeItem('refresh_token');
+};
+
+// 動態獲取 Keycloak 實例（避免循環引用）
+const getKeycloakInstance = () => {
+  // 延遲載入 useKeycloak hook
+  return window.__keycloak_instance;
+};
+
+// 刷新 SSO token 的輔助函數
+const refreshSSOTokenIfNeeded = async () => {
+  const keycloak = getKeycloakInstance();
+  if (!keycloak) {
+    console.warn('Keycloak 實例不可用');
+    return false;
+  }
+  
+  try {
+    const refreshed = await keycloak.updateToken(30);
+    if (refreshed) {
+      console.log('SSO token 已刷新');
+      // 更新 localStorage 中的 SSO tokens
+      localStorage.setItem('sso_idtoken', keycloak.idToken || '');
+      localStorage.setItem('sso_accesstoken', keycloak.token || '');
+      localStorage.setItem('sso_refreshtoken', keycloak.refreshToken || '');
+      return true;
+    }
+    return false;
+  } catch (error) {
+    console.error('SSO token 刷新失敗:', error);
+    return false;
+  }
 };
 
 // 請求攔截器
@@ -75,8 +113,18 @@ api.interceptors.response.use(
         });
         
         if (ssoIdToken && ssoAccessToken) {
-          console.log('SSO 登入 - 重新獲取應用 token');
-          // 如果是 SSO 登入，嘗試重新獲取應用 token
+          console.log('SSO 登入 - 嘗試刷新 SSO token 並重新獲取應用 token');
+          
+          // 先嘗試刷新 SSO token
+          const ssoRefreshed = await refreshSSOTokenIfNeeded();
+          
+          if (ssoRefreshed) {
+            console.log('SSO token 刷新成功，重新獲取應用 token');
+          } else {
+            console.log('SSO token 無需刷新或刷新失敗，嘗試用現有 SSO token 獲取應用 token');
+          }
+          
+          // 嘗試重新獲取應用 token
           const response = await authAPI.ssoLogin();
           console.log('SSO 登入響應:', response);
           
@@ -126,7 +174,12 @@ api.interceptors.response.use(
           console.log('重定向到登入頁');
           window.location.href = '/login';
         } else {
-          console.log('SSO 登入失敗，但不重定向到登入頁');
+          console.log('SSO 登入失敗，清除所有 SSO tokens 並重定向到登入頁');
+          localStorage.removeItem('sso_idtoken');
+          localStorage.removeItem('sso_accesstoken');
+          localStorage.removeItem('sso_refreshtoken');
+          localStorage.removeItem('preLoginType');
+          window.location.href = '/login';
         }
         return Promise.reject(refreshError);
       }
@@ -155,6 +208,8 @@ export const authAPI = {
       throw new Error('SSO tokens not found');
     }
 
+    console.log('使用 SSO tokens 獲取應用 tokens...');
+    
     // 使用 SSO tokens 獲取應用 tokens
     const response = await api.get('/sso_token', {
       headers: {

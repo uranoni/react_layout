@@ -107,12 +107,32 @@ export const useAuthStore = create<AuthState>((set, get) => ({
   
   // 清除所有 tokens 的輔助函數
   clearAllTokens: () => {
-    localStorage.removeItem('access_token');
-    localStorage.removeItem('refresh_token');
-    localStorage.removeItem('sso_idtoken');
-    localStorage.removeItem('sso_accesstoken');
-    localStorage.removeItem('sso_refreshtoken');
-    setPreLoginType(null); // 清除預登入狀態
+    try {
+      console.log('開始清除所有認證相關的本地儲存...');
+      
+      // 清除應用程式 tokens
+      localStorage.removeItem('access_token');
+      localStorage.removeItem('refresh_token');
+      
+      // 清除 SSO tokens
+      localStorage.removeItem('sso_idtoken');
+      localStorage.removeItem('sso_accesstoken');
+      localStorage.removeItem('sso_refreshtoken');
+      
+      // 清除預登入狀態
+      setPreLoginType(null);
+      
+      console.log('所有認證相關的本地儲存已清除');
+    } catch (error) {
+      console.error('清除本地儲存時發生錯誤:', error);
+      // 即使發生錯誤，也要嘗試清除基本的 tokens
+      try {
+        localStorage.removeItem('access_token');
+        localStorage.removeItem('refresh_token');
+      } catch (fallbackError) {
+        console.error('基本 token 清除也失敗:', fallbackError);
+      }
+    }
   },
   
   login: async (username: string, password: string) => {
@@ -185,20 +205,69 @@ export const useAuthStore = create<AuthState>((set, get) => ({
   
   logout: async () => {
     try {
-      // 呼叫後端登出 API
-      await authAPI.logout();
+      const { authType } = get();
+      console.log('開始登出流程，認證類型:', authType);
       
-      // 清除所有 tokens 和預登入狀態
+      // 1. 呼叫後端登出 API（對所有類型都適用）
+      try {
+        await authAPI.logout();
+        console.log('後端登出 API 呼叫成功');
+      } catch (backendError) {
+        console.error('後端登出 API 失敗，但繼續登出流程:', backendError);
+        // 不要因為後端 API 失敗就停止登出流程
+      }
+      
+      // 2. 如果是 SSO 登入，需要額外呼叫 Keycloak 登出
+      if (authType === 'sso') {
+        console.log('SSO 登出 - 準備呼叫 Keycloak 登出');
+        const keycloak = window.__keycloak_instance;
+        
+        if (keycloak && keycloak.authenticated) {
+          try {
+            console.log('呼叫 Keycloak 登出...');
+            // 先清除本地 tokens，避免 Keycloak 登出重定向前的狀態不一致
+            const { clearAllTokens } = get();
+            clearAllTokens();
+            set({ isAuthenticated: false, user: null, authType: null });
+            
+            // 呼叫 Keycloak 登出（這會重定向到登入頁）
+            await keycloak.logout({
+              redirectUri: window.location.origin + '/login'
+            });
+            
+            console.log('Keycloak 登出完成');
+            // 注意：這裡可能不會執行到，因為 keycloak.logout() 會重定向頁面
+            return;
+          } catch (keycloakError) {
+            console.error('Keycloak 登出失敗:', keycloakError);
+            // 即使 Keycloak 登出失敗，也要繼續本地清理
+          }
+        } else {
+          console.log('Keycloak 實例不可用或未認證，跳過 Keycloak 登出');
+        }
+      }
+      
+      // 3. 清除所有本地狀態（對本地登入或 SSO 登出失敗的情況）
+      console.log('清除所有本地認證狀態');
       const { clearAllTokens } = get();
       clearAllTokens();
-      
       set({ isAuthenticated: false, user: null, authType: null });
+      
+      console.log('登出流程完成');
     } catch (error) {
-      console.error('登出失敗:', error);
-      // 即使登出失敗，也要清除本地 tokens
-      const { clearAllTokens } = get();
-      clearAllTokens();
-      set({ isAuthenticated: false, user: null, authType: null });
+      console.error('登出過程發生錯誤:', error);
+      
+      // 即使發生錯誤，也要確保本地狀態被清除
+      try {
+        const { clearAllTokens } = get();
+        clearAllTokens();
+        set({ isAuthenticated: false, user: null, authType: null });
+        console.log('緊急清除本地狀態完成');
+      } catch (cleanupError) {
+        console.error('緊急清除本地狀態失敗:', cleanupError);
+      }
+      
+      // 重新拋出錯誤，讓呼叫方知道登出過程有問題
       throw error;
     }
   },
@@ -235,6 +304,28 @@ export const useAuthStore = create<AuthState>((set, get) => ({
         
         // 嘗試刷新應用程式 token
         try {
+          // 首先檢查 SSO token 是否需要刷新
+          const keycloak = window.__keycloak_instance;
+          if (keycloak) {
+            try {
+              const ssoRefreshed = await keycloak.updateToken(30);
+              if (ssoRefreshed) {
+                console.log('SSO token 在 checkAuth 中已刷新');
+                // 更新 localStorage 中的 SSO tokens
+                localStorage.setItem('sso_idtoken', keycloak.idToken || '');
+                localStorage.setItem('sso_accesstoken', keycloak.token || '');
+                localStorage.setItem('sso_refreshtoken', keycloak.refreshToken || '');
+              }
+            } catch (ssoError) {
+              console.error('SSO token 刷新失敗:', ssoError);
+              // SSO token 無法刷新，可能已經過期，清除所有 tokens
+              const { clearAllTokens } = get();
+              clearAllTokens();
+              set({ isAuthenticated: false, user: null, authType: null });
+              return false;
+            }
+          }
+
           const result = await authAPI.refresh();
           // 修正：只檢查 tokens，user 資訊可選
           if (result && result.access_token && result.refresh_token) {

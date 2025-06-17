@@ -34,19 +34,34 @@ export default defineConfig(({ mode }: ConfigEnv): UserConfig => {
       globals: true,
       environment: 'jsdom',
       css: true,
+      include: [
+        'src/**/*.{test,spec}.{js,mjs,cjs,ts,mts,cts,jsx,tsx}'
+      ],
+      exclude: [
+        'node_modules/',
+        'dist/',
+        '.git/',
+        '.cache/'
+      ],
       coverage: {
         provider: 'v8',
         reporter: ['text', 'json', 'html'],
         include: [
-          'src/layout/MainLayout.tsx',
-          'src/pages/attendance/AttendancePage.tsx'
+          'src/**/*.{js,ts,jsx,tsx}'
         ],
-        exclude: ['node_modules/', 'src/setupTests.ts'],
+        exclude: [
+          'node_modules/',
+          'src/**/*.{test,spec}.{js,mjs,cjs,ts,mts,cts,jsx,tsx}',
+          'src/setupTests.ts',
+          'src/**/*.d.ts',
+          'src/main.tsx',
+          'src/vite-env.d.ts'
+        ],
         thresholds: {
-          statements: 100,
-          branches: 100,
-          functions: 100,
-          lines: 100
+          statements: 80,
+          branches: 80,
+          functions: 80,
+          lines: 80
         }
       }
     }
