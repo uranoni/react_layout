@@ -193,7 +193,7 @@ api.interceptors.response.use(
 export const authAPI = {
   // 本地登入
   login: async (username: string, password: string) => {
-    const response = await api.post('/login', { username, password });
+    const response = await api.post('/login', { useraccount:username, password });
     return response.data;
   },
 

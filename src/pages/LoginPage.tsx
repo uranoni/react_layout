@@ -8,7 +8,7 @@ const LoginPage = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const { login } = useAuthStore();
-  const { login: ssoLogin } = useKeycloak();
+  const { login: ssoLogin, ssoEnabled } = useKeycloak();
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
@@ -33,6 +33,11 @@ const LoginPage = () => {
   };
 
   const handleSSOLogin = async () => {
+    if (!ssoEnabled) {
+      setError('SSO 功能目前未啟用');
+      return;
+    }
+
     setError('');
     setIsLoading(true);
 
@@ -83,19 +88,38 @@ const LoginPage = () => {
           </button>
         </form>
 
-        <div className={styles.divider}>
-          <span className={styles.dividerLine}></span>
-          <span className={styles.dividerText}>或</span>
-          <span className={styles.dividerLine}></span>
-        </div>
+        {/* 只有在 SSO 啟用時才顯示 SSO 登入選項 */}
+        {ssoEnabled && (
+          <>
+            <div className={styles.divider}>
+              <span className={styles.dividerLine}></span>
+              <span className={styles.dividerText}>或</span>
+              <span className={styles.dividerLine}></span>
+            </div>
 
-        <button 
-          className={styles.ssoButton}
-          onClick={handleSSOLogin}
-          disabled={isLoading}
-        >
-          {isLoading ? '登入中...' : '使用 SSO 登入'}
-        </button>
+            <button 
+              className={styles.ssoButton}
+              onClick={handleSSOLogin}
+              disabled={isLoading}
+            >
+              {isLoading ? '登入中...' : '使用 SSO 登入'}
+            </button>
+          </>
+        )}
+
+        {/* 顯示 SSO 狀態提示 */}
+        {!ssoEnabled && (
+          <div style={{ 
+            marginTop: '1rem', 
+            padding: '0.5rem', 
+            backgroundColor: '#f0f0f0', 
+            borderRadius: '4px', 
+            fontSize: '0.9rem', 
+            color: '#666' 
+          }}>
+            💡 提示：SSO 功能目前未配置，僅可使用本地登入
+          </div>
+        )}
       </div>
     </div>
   );

@@ -51,11 +51,22 @@ const Header = ({ onToggleSidebar }: HeaderProps) => {
         {/* 用戶資訊 */}
         <div className={styles.userInfo}>
           <div className={styles.userAvatar}>
-            {user?.name?.charAt(0) || '用'}
+            {user?.name?.charAt(0) || user?.username?.charAt(0) || '用'}
           </div>
           <div className={styles.userName}>
-            <span>{user?.name || '用戶'}</span>
+            <span>{user?.name || user?.username || '用戶'}</span>
+            <small className={styles.userRole}>
+              {user?.role || 'user'} | {user?.authType === 'sso' ? 'SSO' : '本地'}
+            </small>
             <div className={styles.userDropdown}>
+              <div className={styles.userDetail}>
+                <div><strong>用戶名：</strong>{user?.username || 'N/A'}</div>
+                <div><strong>姓名：</strong>{user?.name || 'N/A'}</div>
+                <div><strong>信箱：</strong>{user?.email || 'N/A'}</div>
+                <div><strong>角色：</strong>{user?.role || 'user'}</div>
+                <div><strong>登入方式：</strong>{user?.authType === 'sso' ? 'SSO 登入' : '本地登入'}</div>
+              </div>
+              <hr className={styles.divider} />
               <div className={styles.dropdownItem}>個人資料</div>
               <div className={styles.dropdownItem}>設定</div>
               <div 

@@ -2,14 +2,30 @@ import { useEffect, useState } from 'react';
 import Keycloak from 'keycloak-js';
 import { keycloakConfig } from '../config/keycloak.config';
 
-const keycloak = new Keycloak(keycloakConfig);
+// TODO: 添加 SSO 開關，可以透過環境變數控制
+const SSO_ENABLED = import.meta.env.VITE_SSO_ENABLED !== 'false' && !!keycloakConfig.url;
+
+let keycloak: Keycloak | null = null;
+
+// 只有在 SSO 啟用且配置完整時才創建 Keycloak 實例
+if (SSO_ENABLED) {
+  keycloak = new Keycloak(keycloakConfig);
+}
 
 export const useKeycloak = () => {
-  const [isInitialized, setIsInitialized] = useState(false);
+  const [isInitialized, setIsInitialized] = useState(!SSO_ENABLED); // 如果 SSO 關閉，直接標記為已初始化
   const [isAuthenticated, setIsAuthenticated] = useState(false);
 
   useEffect(() => {
     const initKeycloak = async () => {
+      // 如果 SSO 未啟用，跳過初始化
+      if (!SSO_ENABLED || !keycloak) {
+        console.log('SSO 已關閉或配置不完整，跳過 Keycloak 初始化');
+        setIsInitialized(true);
+        setIsAuthenticated(false);
+        return;
+      }
+
       try {
         console.log('開始初始化 Keycloak...');
         
@@ -32,6 +48,7 @@ export const useKeycloak = () => {
         }
       } catch (error) {
         console.error('Keycloak 初始化失敗:', error);
+        console.log('將繼續以 SSO 關閉模式運行');
         setIsInitialized(true);
         setIsAuthenticated(false);
       }
@@ -42,6 +59,8 @@ export const useKeycloak = () => {
 
   // 設置 token 自動刷新機制
   const setupTokenRefresh = () => {
+    if (!SSO_ENABLED || !keycloak) return;
+
     // 每 30 秒檢查一次 token 是否需要刷新（在過期前 70 秒刷新）
     const refreshInterval = setInterval(async () => {
       try {
@@ -70,6 +89,11 @@ export const useKeycloak = () => {
 
   // 手動刷新 SSO token
   const refreshSSOToken = async () => {
+    if (!SSO_ENABLED || !keycloak) {
+      console.log('SSO 已關閉，無法刷新 token');
+      return false;
+    }
+
     try {
       const refreshed = await keycloak.updateToken(0); // 強制刷新
       if (refreshed) {
@@ -89,6 +113,7 @@ export const useKeycloak = () => {
 
   // 檢查 SSO token 是否有效
   const isTokenValid = () => {
+    if (!SSO_ENABLED || !keycloak) return false;
     return keycloak.authenticated && !keycloak.isTokenExpired();
   };
 
@@ -100,6 +125,10 @@ export const useKeycloak = () => {
   };
 
   const login = async () => {
+    if (!SSO_ENABLED || !keycloak) {
+      throw new Error('SSO 已關閉，無法使用 SSO 登入');
+    }
+
     try {
       await keycloak.login();
     } catch (error) {
@@ -109,6 +138,11 @@ export const useKeycloak = () => {
   };
 
   const logout = async () => {
+    if (!SSO_ENABLED || !keycloak) {
+      console.log('SSO 已關閉，跳過 Keycloak 登出');
+      return;
+    }
+
     try {
       console.log('useKeycloak: 開始 Keycloak 登出流程...');
       
@@ -143,7 +177,8 @@ export const useKeycloak = () => {
     keycloak,
     refreshSSOToken,
     isTokenValid,
-    clearSSOTokens
+    clearSSOTokens,
+    ssoEnabled: SSO_ENABLED // 暴露 SSO 開關狀態
   };
 };
 

@@ -12,23 +12,23 @@ export default defineConfig(({ mode }: ConfigEnv): UserConfig => {
   return {
     plugins: [
       react(),
-      basicSsl()
+      // basicSsl()
     ],
     server: {
       host: true,
-      port: 443,
+      // port: 443,
       https: env.VITE_SSL_ENABLED === 'true' ? {
         key: undefined,
         cert: undefined
       } : undefined,
-      proxy: {
-        '/api': {
-          target: env.VITE_API_URL,
-          changeOrigin: true,
-          secure: false,
-          rewrite: (path) => path.replace(/^\/api/, '')
-        }
-      }
+      // proxy: {
+      //   '/api': {
+      //     target: env.VITE_API_URL,
+      //     changeOrigin: true,
+      //     secure: false,
+      //     rewrite: (path) => path.replace(/^\/api/, '')
+      //   }
+      // }
     },
     test: {
       globals: true,

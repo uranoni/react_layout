@@ -143,26 +143,47 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       
       const response = await authAPI.login(username, password);
       const { access_token: accessToken, refresh_token: refreshToken } = response;
-      
-      // 安全檢查使用者資訊，提供預設值
-      const user = response.user || {
-        id: '',
-        username: username || '',
-        name: '',
-        email: '',
-        role: 'user'
-      };
+      console.log('登入 API 響應:', response);
       
       // 儲存本地認證 token（不儲存 SSO tokens）
       localStorage.setItem('access_token', accessToken);
       localStorage.setItem('refresh_token', refreshToken);
       setPreLoginType('local'); // 設置預登入狀態為本地登入
       
+      // 嘗試獲取用戶詳細資料
+      let user;
+      try {
+        console.log('嘗試獲取用戶 profile...');
+        user = await authAPI.getUserProfile();
+        console.log('用戶 profile 獲取成功:', user);
+      } catch (profileError) {
+        console.warn('獲取用戶 profile 失敗，使用登入響應中的 user 資訊或預設值:', profileError);
+        // 回退到登入響應中的 user 資訊或預設值
+        user = response.user || {
+          id: '',
+          username: username || '',
+          name: username || '',
+          email: '',
+          role: 'user'
+        };
+      }
+      
+      // 安全檢查使用者資訊，提供預設值
+      const safeUser = user || {
+        id: '',
+        username: username || '',
+        name: username || '',
+        email: '',
+        role: 'user'
+      };
+      
       set({ 
         isAuthenticated: true, 
-        user: { ...user, authType: 'local' },
+        user: { ...safeUser, authType: 'local' },
         authType: 'local'
       });
+      
+      console.log('本地登入完成，用戶資訊已設置:', safeUser);
     } catch (error) {
       console.error('本地登入失敗:', error);
       throw error;
@@ -177,9 +198,33 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       
       const response = await authAPI.ssoLogin();
       const { access_token: accessToken, refresh_token: refreshToken } = response;
+      console.log('SSO 登入 API 響應:', response);
+      
+      // 儲存應用程式的 token（SSO tokens 已經在 CallbackSSO 或 useKeycloak 中儲存）
+      localStorage.setItem('access_token', accessToken);
+      localStorage.setItem('refresh_token', refreshToken);
+      setPreLoginType('sso'); // 設置預登入狀態為 SSO 登入
+      
+      // 嘗試獲取用戶詳細資料
+      let user;
+      try {
+        console.log('嘗試獲取用戶 profile...');
+        user = await authAPI.getUserProfile();
+        console.log('用戶 profile 獲取成功:', user);
+      } catch (profileError) {
+        console.warn('獲取用戶 profile 失敗，使用 SSO 響應中的 user 資訊或預設值:', profileError);
+        // 回退到 SSO 響應中的 user 資訊或預設值
+        user = response.user || {
+          id: '',
+          username: '',
+          name: '',
+          email: '',
+          role: 'user'
+        };
+      }
       
       // 安全檢查使用者資訊，提供預設值
-      const user = response.user || {
+      const safeUser = user || {
         id: '',
         username: '',
         name: '',
@@ -187,16 +232,13 @@ export const useAuthStore = create<AuthState>((set, get) => ({
         role: 'user'
       };
       
-      // 儲存應用程式的 token（SSO tokens 已經在 CallbackSSO 或 useKeycloak 中儲存）
-      localStorage.setItem('access_token', accessToken);
-      localStorage.setItem('refresh_token', refreshToken);
-      setPreLoginType('sso'); // 設置預登入狀態為 SSO 登入
-      
       set({ 
         isAuthenticated: true, 
-        user: { ...user, authType: 'sso' },
+        user: { ...safeUser, authType: 'sso' },
         authType: 'sso'
       });
+      
+      console.log('SSO 登入完成，用戶資訊已設置:', safeUser);
     } catch (error) {
       console.error('SSO 登入失敗:', error);
       throw error;
