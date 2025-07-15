@@ -17,10 +17,10 @@ export default defineConfig(({ mode }: ConfigEnv): UserConfig => {
     server: {
       host: true,
       // port: 443,
-      https: env.VITE_SSL_ENABLED === 'true' ? {
-        key: undefined,
-        cert: undefined
-      } : undefined,
+      // https: env.VITE_SSL_ENABLED === 'true' ? {
+      //   key: undefined,
+      //   cert: undefined
+      // } : undefined,
       // proxy: {
       //   '/api': {
       //     target: env.VITE_API_URL,

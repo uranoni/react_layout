@@ -10,7 +10,7 @@ declare global {
 
 // 創建 axios 實例
 const api = axios.create({
-  baseURL: import.meta.env.VITE_APP_URL + '/api',
+  baseURL: import.meta.env.VITE_APP_URL ,
   timeout: 10000,
   headers: {
     'Content-Type': 'application/json',
@@ -19,7 +19,7 @@ const api = axios.create({
 
 // 創建一個不經過攔截器的 axios 實例，專門用於 refresh
 const refreshApi = axios.create({
-  baseURL: import.meta.env.VITE_APP_URL + '/api',
+  baseURL: import.meta.env.VITE_APP_URL ,
   timeout: 10000,
   headers: {
     'Content-Type': 'application/json',
@@ -282,6 +282,16 @@ export const authAPI = {
   
   getUserProfile: async () => {
     const response = await api.get('/user/profile');
+    return response.data;
+  },
+
+  createUser: async (userData: {
+    username: string;
+    employeeId: string;
+    name: string;
+    site: string;
+  }) => {
+    const response = await api.post('/user/create', userData);
     return response.data;
   },
 };

@@ -45,7 +45,10 @@ const Sidebar = ({ collapsed, onCollapse }: SidebarProps) => {
               <i className="fas fa-chart-bar"></i>
               <span>統計報表</span>
             </div>
-            <div className={styles.navItem}>
+            <div 
+              className={`${styles.navItem} ${location.pathname.startsWith('/system') ? styles.active : ''}`}
+              onClick={() => navigate('/system/createuser')}
+            >
               <i className="fas fa-cog"></i>
               <span>系統設定</span>
             </div>

@@ -24,24 +24,43 @@ export const useAuth = () => {
   } = useAuthStore();
   const navigate = useNavigate();
 
-  // 使用 SWR 獲取用戶資料
-  const { data: userData, error, mutate } = useSWR(
-    isAuthenticated ? '/user/profile' : null,
-    profileFetcher,
-    {
-      revalidateOnFocus: false,
-      revalidateOnReconnect: false,
-      dedupingInterval: 60000, // 1分鐘內不重複請求
-      onSuccess: (data) => {
-        setUser(data);
-      },
-      onError: (err) => {
-        console.error('Failed to fetch user profile:', err);
-        // 如果獲取用戶資料失敗，嘗試刷新 token
-        checkAuth();
-      }
+  // 当后端 /user/profile API 修复后，取消注释以下代码即可恢复原功能：
+
+/*
+// 恢复时取消注释这部分
+const { data: userData, error, mutate } = useSWR(
+  isAuthenticated ? '/user/profile' : null,
+  profileFetcher,
+  {
+    revalidateOnFocus: false,
+    revalidateOnReconnect: false,
+    dedupingInterval: 60000,
+    onSuccess: (data) => {
+      setUser(data);
+    },
+    onError: (err) => {
+      console.error('Failed to fetch user profile:', err);
+      checkAuth();
     }
-  );
+  }
+);
+
+// 并删除临时的空对象
+// const userData = null;
+// const error = null;
+// const mutate = async () => {};
+
+// 在handleLogin中恢复mutate()调用
+// mutate();
+
+// 恢复原来的isLoading逻辑
+// isLoading: !error && !userData && isAuthenticated,
+*/
+
+  // 临时的空对象，避免SWR相关错误
+  const userData = null;
+  const error = null;
+  const mutate = async () => {};
 
   // 自動刷新 token
   useEffect(() => {
@@ -62,8 +81,8 @@ export const useAuth = () => {
   const handleLogin = useCallback(async (username: string, password: string) => {
     try {
       await login(username, password);
-      // 登入成功後重新獲取用戶資料
-      mutate();
+      // 登入成功後重新獲取用戶資料（暂时注释掉）
+      // mutate();
       navigate('/');
       return true;
     } catch (error) {
@@ -81,7 +100,7 @@ export const useAuth = () => {
   return {
     isAuthenticated,
     user: user || userData,
-    isLoading: !error && !userData && isAuthenticated,
+    isLoading: false, // 暂时设为false，避免无限loading
     login: handleLogin,
     logout: handleLogout,
     refreshUser: mutate
