@@ -4,6 +4,7 @@ import HomePage from '../pages/HomePage';
 import AttendancePage from '../pages/attendance/AttendancePage';
 import Daily from '../pages/attendance/Daily';
 import Leave from '../pages/attendance/Leave';
+import Summary from '../pages/attendance/Summary';
 import SystemPage from '../pages/system/SystemPage';
 import CreateLocalUser from '../pages/system/CreateLocalUser';
 import LoginPage from '../pages/LoginPage';
@@ -32,6 +33,10 @@ export const router = createBrowserRouter([
           {
             path: 'leave',
             element: <Leave />
+          },
+          {
+            path: 'summary',
+            element: <Summary />
           }
         ]
       },

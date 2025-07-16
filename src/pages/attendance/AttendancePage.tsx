@@ -15,6 +15,9 @@ const AttendancePage = () => {
       case 'leave':
         navigate('/attendance/leave');
         break;
+      case 'summary':
+        navigate('/attendance/summary');
+        break;
     }
   };
 
@@ -36,6 +39,13 @@ const AttendancePage = () => {
           >
             <i className="fas fa-calendar-times"></i>
             請假系統
+          </button>
+          <button 
+            className={`${styles.tab} ${activeTab === 'summary' ? styles.active : ''}`}
+            onClick={() => handleTabChange('summary')}
+          >
+            <i className="fas fa-chart-bar"></i>
+            出勤統計
           </button>
         </div>
       </div>

@@ -408,6 +408,30 @@ export const attendanceAPI = {
       }
       throw error;
     }
+  },
+
+  // 新增獲取站點出勤統計資料 API
+  getSiteCheckData: async (params: {
+    site: string;
+    startDate: string;
+    endDate: string;
+  }) => {
+    try {
+      console.log('發送請求到 /getsitecheckdata，參數:', params);
+      const response = await api.post('/getsitecheckdata', params);
+      console.log('獲取站點出勤統計資料 API 響應:', response);
+      return response.data;
+    } catch (error) {
+      console.error('獲取站點出勤統計資料失敗:', error);
+      if (axios.isAxiosError(error)) {
+        console.error('請求錯誤詳情:', {
+          status: error.response?.status,
+          data: error.response?.data,
+          headers: error.response?.headers
+        });
+      }
+      throw error;
+    }
   }
 };
 
