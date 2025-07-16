@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import styles from './Summary.module.css';
+import { attendanceAPI } from '../../api/api';
 
 // 假資料類型定義
 interface SiteCheckData {
@@ -18,58 +19,112 @@ const Summary = () => {
   const [heatmapData, setHeatmapData] = useState<SiteCheckData[]>([]);
   const [isLoading, setIsLoading] = useState(false);
 
-  // 生成假資料
-  const generateMockData = (): SiteCheckData[] => {
-    const users = ['張三', '李四', '王五', '陳六', '林七', '黃八', '周九', '吳十'];
-    const dates = ['2025-07-01', '2025-07-02'];
-    const statuses: ('checkin' | 'pending' | 'leave')[] = ['checkin', 'pending', 'leave'];
+  // 生成假資料 (已註解，改用真實API)
+  // const generateMockData = (): SiteCheckData[] => {
+  //   const users = ['張三', '李四', '王五', '陳六', '林七', '黃八', '周九', '吳十'];
+  //   const dates = ['2025-07-01', '2025-07-02'];
+  //   const statuses: ('checkin' | 'pending' | 'leave')[] = ['checkin', 'pending', 'leave'];
+  //   
+  //   const mockData: SiteCheckData[] = [];
+  //   
+  //   users.forEach(user => {
+  //     dates.forEach(date => {
+  //       // 隨機生成狀態，但確保有各種狀態的展示
+  //       const randomStatus = statuses[Math.floor(Math.random() * statuses.length)];
+  //       mockData.push({
+  //         username: user,
+  //         date,
+  //         status: randomStatus
+  //       });
+  //     });
+  //   });
+  //   
+  //   return mockData;
+  // };
+
+  // 時間格式轉換函數
+  const formatDateForAPI = (dateStr: string): string => {
+    // 將 "2025/07/01" 格式轉換為 "2025-07-01" 格式
+    return dateStr.replace(/\//g, '-');
+  };
+
+  // 生成月份的開始和結束日期
+  const getMonthRange = (year: number, month: number): { startDate: string, endDate: string } => {
+    const start = new Date(year, month - 1, 1);
+    const end = new Date(year, month, 0); // 獲取該月的最後一天
     
-    const mockData: SiteCheckData[] = [];
+    const formatDate = (date: Date): string => {
+      const y = date.getFullYear();
+      const m = String(date.getMonth() + 1).padStart(2, '0');
+      const d = String(date.getDate()).padStart(2, '0');
+      return `${y}-${m}-${d}`;
+    };
     
-    users.forEach(user => {
-      dates.forEach(date => {
-        // 隨機生成狀態，但確保有各種狀態的展示
-        const randomStatus = statuses[Math.floor(Math.random() * statuses.length)];
-        mockData.push({
-          username: user,
-          date,
-          status: randomStatus
-        });
-      });
-    });
-    
-    return mockData;
+    return {
+      startDate: formatDate(start),
+      endDate: formatDate(end)
+    };
   };
 
   // 處理查詢
   const handleSearch = async () => {
     setIsLoading(true);
     try {
-      // 模擬API調用延遲
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      // 準備API參數
+      let apiStartDate: string;
+      let apiEndDate: string;
       
-      // 使用假資料
-      const mockData = generateMockData();
-      setHeatmapData(mockData);
+      if (timeRangeType === 'month') {
+        // 使用年月範圍
+        const monthRange = getMonthRange(selectedYear, selectedMonth);
+        apiStartDate = monthRange.startDate;
+        apiEndDate = monthRange.endDate;
+      } else {
+        // 使用自定義日期範圍
+        apiStartDate = formatDateForAPI(startDate);
+        apiEndDate = formatDateForAPI(endDate);
+      }
       
-      console.log('查詢參數:', {
+      const apiParams = {
         site: selectedSite,
-        timeRangeType,
-        ...(timeRangeType === 'month' 
-          ? { year: selectedYear, month: selectedMonth }
-          : { startDate, endDate }
-        )
-      });
+        startDate: apiStartDate,
+        endDate: apiEndDate
+      };
+      
+      console.log('發送API請求，參數:', apiParams);
+      
+      // 調用真實API
+      const response = await attendanceAPI.getSiteCheckData(apiParams);
+      console.log('API響應:', response);
+      
+      // 將API響應轉換為熱力圖數據格式
+      const transformedData: SiteCheckData[] = [];
+      if (response && Array.isArray(response)) {
+        response.forEach((item: any) => {
+          transformedData.push({
+            username: item.username || item.useraccount || item.name || '未知用戶',
+            date: item.date || item.updatedate || '',
+            status: item.status || 'pending'
+          });
+        });
+      }
+      
+      setHeatmapData(transformedData);
+      
     } catch (error) {
       console.error('查詢失敗:', error);
+      // 在錯誤情況下清空數據
+      setHeatmapData([]);
     } finally {
       setIsLoading(false);
     }
   };
 
-  // 初始載入假資料
+  // 初始載入資料
   useEffect(() => {
+    // 頁面載入時執行一次查詢
     handleSearch();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   // 獲取唯一的用戶列表和日期列表
