@@ -46,36 +46,187 @@
   font-size: 0.875rem;
 }
 
-.dashboard {
+/* 用戶資訊樣式 */
+.userInfo {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-  gap: 24px;
-  margin-top: 24px;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 1rem;
+  margin: 1rem 0;
+  padding: 1rem;
+  background: var(--secondary);
+  border-radius: 8px;
 }
 
-.card {
-  background: var(--card-bg);
-  padding: 24px;
-  border-radius: 12px;
-  border: 1px solid var(--border);
-  transition: all 0.3s ease;
+.infoItem {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
 }
 
-.card:hover {
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-  transform: translateY(-2px);
-}
-
-.card h3 {
-  margin: 0 0 16px 0;
+.infoLabel {
+  font-size: 0.875rem;
   color: var(--text-secondary);
-  font-size: 1rem;
   font-weight: 500;
 }
 
-.card p {
+.infoValue {
+  font-size: 1rem;
+  color: var(--text-primary);
+  font-weight: 600;
+}
+
+/* 系統權限區域樣式 */
+.systemsSection {
+  margin-top: 2rem;
+}
+
+.sectionTitle {
+  margin: 0 0 1.5rem 0;
+  color: var(--text-primary);
+  font-size: 1.5rem;
+  font-weight: 600;
+}
+
+.systemsGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 1.5rem;
+}
+
+.systemCard {
+  background: var(--card-bg);
+  padding: 1.5rem;
+  border-radius: 12px;
+  border: 1px solid var(--border);
+  transition: all 0.3s ease;
+  position: relative;
+  overflow: hidden;
+}
+
+.systemCard:hover {
+  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+  transform: translateY(-4px);
+  border-color: var(--primary);
+}
+
+.systemCard:before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 4px;
+  background: linear-gradient(90deg, var(--primary), var(--primary-light));
+}
+
+.systemHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1rem;
+}
+
+.systemName {
   margin: 0;
-  font-size: 2rem;
-  font-weight: 700;
-  color: var(--primary);
+  color: var(--text-primary);
+  font-size: 1.25rem;
+  font-weight: 600;
+  text-transform: capitalize;
+}
+
+.roleCount {
+  font-size: 0.875rem;
+  color: var(--text-secondary);
+  background: var(--secondary);
+  padding: 0.25rem 0.75rem;
+  border-radius: 20px;
+  font-weight: 500;
+}
+
+.rolesContainer {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.roleTag {
+  display: inline-block;
+  padding: 0.5rem 1rem;
+  background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+  color: white;
+  border-radius: 20px;
+  font-size: 0.875rem;
+  font-weight: 500;
+  text-transform: capitalize;
+  box-shadow: 0 2px 8px rgba(var(--primary-rgb), 0.3);
+  transition: all 0.2s ease;
+}
+
+.roleTag:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(var(--primary-rgb), 0.4);
+}
+
+/* 針對不同系統使用不同顏色 */
+.systemCard:nth-child(2n) .roleTag {
+  background: linear-gradient(135deg, var(--success), var(--success-dark));
+  box-shadow: 0 2px 8px rgba(var(--success-rgb), 0.3);
+}
+
+.systemCard:nth-child(2n) .roleTag:hover {
+  box-shadow: 0 4px 12px rgba(var(--success-rgb), 0.4);
+}
+
+.systemCard:nth-child(3n) .roleTag {
+  background: linear-gradient(135deg, var(--info), var(--info-dark));
+  box-shadow: 0 2px 8px rgba(var(--info-rgb), 0.3);
+}
+
+.systemCard:nth-child(3n) .roleTag:hover {
+  box-shadow: 0 4px 12px rgba(var(--info-rgb), 0.4);
+}
+
+.systemCard:nth-child(4n) .roleTag {
+  background: linear-gradient(135deg, var(--warning), var(--warning-dark));
+  box-shadow: 0 2px 8px rgba(var(--warning-rgb), 0.3);
+}
+
+.systemCard:nth-child(4n) .roleTag:hover {
+  box-shadow: 0 4px 12px rgba(var(--warning-rgb), 0.4);
+}
+
+/* 無系統權限提示 */
+.noSystems {
+  margin-top: 2rem;
+  padding: 2rem;
+  background: var(--secondary);
+  border-radius: 12px;
+  text-align: center;
+}
+
+.noSystems p {
+  margin: 0;
+  color: var(--text-secondary);
+  font-size: 1rem;
+}
+
+/* 響應式設計 */
+@media (max-width: 768px) {
+  .userInfo {
+    grid-template-columns: 1fr;
+  }
+  
+  .systemsGrid {
+    grid-template-columns: 1fr;
+  }
+  
+  .systemHeader {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.5rem;
+  }
+  
+  .rolesContainer {
+    justify-content: center;
+  }
 } 

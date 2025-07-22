@@ -1,12 +1,17 @@
 import { create } from 'zustand';
 import { authAPI } from '../api/api';
 
+interface SystemRole {
+  systemName: string;
+  roles: string[];
+}
+
 interface User {
-  id: string;
+  useraccount: string;
   username: string;
-  name: string;
-  email: string;
-  role: string;
+  tel: string;
+  location: string;
+  systems: SystemRole[];
   authType: 'local' | 'sso' | null;
 }
 
@@ -160,21 +165,21 @@ export const useAuthStore = create<AuthState>((set, get) => ({
         console.warn('獲取用戶 profile 失敗，使用登入響應中的 user 資訊或預設值:', profileError);
         // 回退到登入響應中的 user 資訊或預設值
         user = response.user || {
-          id: '',
+          useraccount: username || '',
           username: username || '',
-          name: username || '',
-          email: '',
-          role: 'user'
+          tel: '',
+          location: '',
+          systems: []
         };
       }
       
       // 安全檢查使用者資訊，提供預設值
       const safeUser = user || {
-        id: '',
+        useraccount: username || '',
         username: username || '',
-        name: username || '',
-        email: '',
-        role: 'user'
+        tel: '',
+        location: '',
+        systems: []
       };
       
       set({ 
@@ -215,21 +220,21 @@ export const useAuthStore = create<AuthState>((set, get) => ({
         console.warn('獲取用戶 profile 失敗，使用 SSO 響應中的 user 資訊或預設值:', profileError);
         // 回退到 SSO 響應中的 user 資訊或預設值
         user = response.user || {
-          id: '',
+          useraccount: '',
           username: '',
-          name: '',
-          email: '',
-          role: 'user'
+          tel: '',
+          location: '',
+          systems: []
         };
       }
       
       // 安全檢查使用者資訊，提供預設值
       const safeUser = user || {
-        id: '',
+        useraccount: '',
         username: '',
-        name: '',
-        email: '',
-        role: 'user'
+        tel: '',
+        location: '',
+        systems: []
       };
       
       set({ 
@@ -383,22 +388,22 @@ export const useAuthStore = create<AuthState>((set, get) => ({
                 console.warn('獲取用戶資料失敗，使用預設值:', profileError);
                 // 使用預設值
                 user = {
-                  id: '',
+                  useraccount: '',
                   username: '',
-                  name: '',
-                  email: '',
-                  role: 'user'
+                  tel: '',
+                  location: '',
+                  systems: []
                 };
               }
             }
             
             // 安全檢查使用者資訊，提供預設值
             const safeUser = user || {
-              id: '',
+              useraccount: '',
               username: '',
-              name: '',
-              email: '',
-              role: 'user'
+              tel: '',
+              location: '',
+              systems: []
             };
             
             set({ 
@@ -414,11 +419,11 @@ export const useAuthStore = create<AuthState>((set, get) => ({
             
             // 安全檢查使用者資訊
             const user = response.user || {
-              id: '',
+              useraccount: '',
               username: '',
-              name: '',
-              email: '',
-              role: 'user'
+              tel: '',
+              location: '',
+              systems: []
             };
             
             localStorage.setItem('access_token', accessToken);
@@ -452,22 +457,22 @@ export const useAuthStore = create<AuthState>((set, get) => ({
               console.warn('獲取用戶資料失敗，使用預設值:', profileError);
               // 使用預設值
               user = {
-                id: '',
+                useraccount: '',
                 username: '',
-                name: '',
-                email: '',
-                role: 'user'
+                tel: '',
+                location: '',
+                systems: []
               };
             }
           }
           
           // 安全檢查使用者資訊，提供預設值
           const safeUser = user || {
-            id: '',
+            useraccount: '',
             username: '',
-            name: '',
-            email: '',
-            role: 'user'
+            tel: '',
+            location: '',
+            systems: []
           };
           
           set({ 

@@ -281,7 +281,7 @@ export const authAPI = {
   },
   
   getUserProfile: async () => {
-    const response = await api.get('/user/profile');
+    const response = await api.post('/user/profile');
     return response.data;
   },
 
