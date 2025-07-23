@@ -238,6 +238,18 @@
   opacity: 0.8;
 }
 
+/* 可點擊格子樣式 */
+.clickableCell {
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.clickableCell:hover {
+  opacity: 0.8;
+  transform: scale(1.05);
+  border: 2px solid var(--primary);
+}
+
 /* 狀態顏色 */
 .checkinCell {
   background: var(--success);
@@ -253,6 +265,108 @@
 
 .emptyCell {
   background: #f3f4f6; /* 淺灰色 */
+}
+
+/* 員工詳細資訊彈窗 */
+.modalOverlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  padding: 1rem;
+}
+
+.modalContent {
+  background: var(--card-bg);
+  border-radius: 0.75rem;
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+  max-width: 500px;
+  width: 100%;
+  max-height: 90vh;
+  overflow: hidden;
+  animation: modalSlideIn 0.3s ease-out;
+}
+
+@keyframes modalSlideIn {
+  from {
+    opacity: 0;
+    transform: scale(0.9) translateY(-20px);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+.modalHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1.5rem;
+  border-bottom: 1px solid var(--border);
+  background: var(--secondary);
+}
+
+.modalHeader h3 {
+  margin: 0;
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.closeButton {
+  background: none;
+  border: none;
+  font-size: 1.5rem;
+  cursor: pointer;
+  color: var(--text-secondary);
+  padding: 0.25rem;
+  line-height: 1;
+  border-radius: 0.25rem;
+  transition: all 0.2s ease;
+  width: 2rem;
+  height: 2rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.closeButton:hover {
+  background: var(--hover);
+  color: var(--text-primary);
+}
+
+.modalBody {
+  padding: 1.5rem;
+}
+
+.infoRow {
+  display: flex;
+  margin-bottom: 1rem;
+  align-items: center;
+}
+
+.infoRow:last-child {
+  margin-bottom: 0;
+}
+
+.label {
+  font-weight: 600;
+  color: var(--text-primary);
+  min-width: 80px;
+  margin-right: 1rem;
+}
+
+.value {
+  color: var(--text-secondary);
+  flex: 1;
+  font-weight: 500;
 }
 
 /* 無資料狀態 */
@@ -297,5 +411,29 @@
   
   .dateCell {
     width: 50px;
+  }
+
+  .modalContent {
+    margin: 1rem;
+    max-width: calc(100% - 2rem);
+  }
+
+  .modalHeader {
+    padding: 1rem;
+  }
+
+  .modalBody {
+    padding: 1rem;
+  }
+
+  .infoRow {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.25rem;
+  }
+
+  .label {
+    min-width: auto;
+    margin-right: 0;
   }
 } 
