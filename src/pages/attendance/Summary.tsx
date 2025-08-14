@@ -1,6 +1,5 @@
 import { useState, useEffect } from 'react';
 import styles from './Summary.module.css';
-import { attendanceAPI } from '../../api/api';
 
 // 假資料類型定義
 interface SiteCheckData {
@@ -84,12 +83,6 @@ const Summary = () => {
     return mockData;
   };
 
-  // 時間格式轉換函數
-  const formatDateForAPI = (dateStr: string): string => {
-    // 將 "2025/07/01" 格式轉換為 "2025-07-01" 格式
-    return dateStr.replace(/\//g, '-');
-  };
-
   // 生成月份的開始和結束日期
   const getMonthRange = (year: number, month: number): { startDate: string, endDate: string } => {
     const start = new Date(year, month - 1, 1);
@@ -108,155 +101,106 @@ const Summary = () => {
     };
   };
 
-  // 處理查詢
+  // 處理站點選擇變更
+  const handleSiteChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    setSelectedSite(e.target.value);
+  };
+
+  // 處理時間範圍類型變更
+  const handleTimeRangeTypeChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setTimeRangeType(e.target.value as 'month' | 'range');
+  };
+
+  // 處理年份變更
+  const handleYearChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setSelectedYear(parseInt(e.target.value));
+  };
+
+  // 處理月份變更
+  const handleMonthChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    setSelectedMonth(parseInt(e.target.value));
+  };
+
+  // 處理開始日期變更
+  const handleStartDateChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setStartDate(e.target.value);
+  };
+
+  // 處理結束日期變更
+  const handleEndDateChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setEndDate(e.target.value);
+  };
+
+  // 處理查詢按鈕點擊
   const handleSearch = async () => {
     setIsLoading(true);
     try {
       console.log('使用 Mock Data 進行測試');
+      // 模擬 API 調用延遲
+      await new Promise(resolve => setTimeout(resolve, 1000));
       
-      // === 暫時使用 Mock Data ===
+      // 生成假資料
       const mockData = generateMockData();
       setHeatmapData(mockData);
-      
-      // === 真實 API 調用 (暫時註解) ===
-      // 準備API參數
-      // let apiStartDate: string;
-      // let apiEndDate: string;
-      // 
-      // if (timeRangeType === 'month') {
-      //   // 使用年月範圍
-      //   const monthRange = getMonthRange(selectedYear, selectedMonth);
-      //   apiStartDate = monthRange.startDate;
-      //   apiEndDate = monthRange.endDate;
-      // } else {
-      //   // 使用自定義日期範圍
-      //   apiStartDate = formatDateForAPI(startDate);
-      //   apiEndDate = formatDateForAPI(endDate);
-      // }
-      // 
-      // const apiParams = {
-      //   site: selectedSite,
-      //   startDate: apiStartDate,
-      //   endDate: apiEndDate
-      // };
-      // 
-      // console.log('發送API請求，參數:', apiParams);
-      // 
-      // // 調用真實API
-      // const response = await attendanceAPI.getSiteCheckData(apiParams);
-      // console.log('API響應:', response);
-      // 
-      // // 將API響應轉換為熱力圖數據格式
-      // const transformedData: SiteCheckData[] = [];
-      // if (response && Array.isArray(response)) {
-      //   response.forEach((item: any) => {
-      //     transformedData.push({
-      //       username: item.username || item.useraccount || item.name || '未知用戶',
-      //       date: item.date || item.updatedate || '',
-      //       status: item.status || 'pending'
-      //     });
-      //   });
-      // }
-      // 
-      // setHeatmapData(transformedData);
-      
     } catch (error) {
       console.error('查詢失敗:', error);
-      // 在錯誤情況下清空數據
-      setHeatmapData([]);
     } finally {
       setIsLoading(false);
     }
   };
 
-  // 初始載入資料
+  // 處理員工點擊
+  const handleEmployeeClick = (employee: SiteCheckData) => {
+    setSelectedEmployee({
+      username: employee.username,
+      phone: employee.phone || '',
+      department: employee.department || '',
+      date: employee.date,
+      status: employee.status,
+      leaveType: employee.leaveType
+    });
+    setShowEmployeeModal(true);
+  };
+
+  // 關閉員工詳情彈窗
+  const closeEmployeeModal = () => {
+    setShowEmployeeModal(false);
+    setSelectedEmployee(null);
+  };
+
+  // 初始化時生成假資料
   useEffect(() => {
-    // 頁面載入時執行一次查詢
-    handleSearch();
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    const mockData = generateMockData();
+    setHeatmapData(mockData);
   }, []);
 
-  // 獲取唯一的用戶列表和日期列表
-  const uniqueUsers = [...new Set(heatmapData.map(item => item.username))];
-  const uniqueDates = [...new Set(heatmapData.map(item => item.date))].sort();
-
-  // 獲取特定用戶和日期的狀態
-  const getStatus = (username: string, date: string): 'checkin' | 'pending' | 'leave' | null => {
-    const record = heatmapData.find(item => item.username === username && item.date === date);
-    return record ? record.status : null;
-  };
-
-  // 獲取員工詳細資料
-  const getEmployeeData = (username: string, date: string): SiteCheckData | null => {
-    return heatmapData.find(item => item.username === username && item.date === date) || null;
-  };
-
-  // 處理格子點擊事件
-  const handleCellClick = (username: string, date: string) => {
-    const employeeData = getEmployeeData(username, date);
-    if (employeeData) {
-      const statusText = employeeData.status === 'leave' && employeeData.leaveType 
-        ? `請假 (${employeeData.leaveType})`
-        : employeeData.status === 'checkin' ? '已簽到'
-        : employeeData.status === 'pending' ? '未簽到'
-        : employeeData.status;
-
-      setSelectedEmployee({
-        username: employeeData.username,
-        phone: employeeData.phone || '未提供',
-        department: employeeData.department || '未知部門',
-        date: date,
-        status: statusText,
-        leaveType: employeeData.leaveType
-      });
-      setShowEmployeeModal(true);
+  // 當時間範圍類型變更時，更新日期
+  useEffect(() => {
+    if (timeRangeType === 'month') {
+      const { startDate: monthStart, endDate: monthEnd } = getMonthRange(selectedYear, selectedMonth);
+      setStartDate(monthStart);
+      setEndDate(monthEnd);
     }
-  };
-
-  // 獲取 hover 顯示文字
-  const getHoverText = (username: string, date: string): string => {
-    const employeeData = getEmployeeData(username, date);
-    if (!employeeData) return `${username} - ${date}: No data`;
-    
-    const statusText = employeeData.status === 'leave' && employeeData.leaveType 
-      ? `請假 (${employeeData.leaveType})`
-      : employeeData.status === 'checkin' ? '已簽到'
-      : employeeData.status === 'pending' ? '未簽到'
-      : employeeData.status;
-    
-    return `${username} (${employeeData.department}) - ${date}: ${statusText}`;
-  };
-
-  // 獲取狀態對應的CSS類
-  const getStatusClass = (status: 'checkin' | 'pending' | 'leave' | null): string => {
-    switch (status) {
-      case 'checkin': return styles.checkinCell;
-      case 'pending': return styles.pendingCell;
-      case 'leave': return styles.leaveCell;
-      default: return styles.emptyCell;
-    }
-  };
+  }, [timeRangeType, selectedYear, selectedMonth]);
 
   return (
     <div className={styles.container}>
-      {/* 查詢條件區域 */}
+      {/* 查詢區域 */}
       <div className={styles.querySection}>
         <div className={styles.queryRow}>
-          {/* Site選擇 */}
           <div className={styles.formGroup}>
             <label>站點</label>
-            <select
-              value={selectedSite}
-              onChange={(e) => setSelectedSite(e.target.value)}
+            <select 
               className={styles.select}
+              value={selectedSite}
+              onChange={handleSiteChange}
             >
               <option value="新竹">新竹</option>
               <option value="台中">台中</option>
               <option value="高雄">高雄</option>
             </select>
           </div>
-
-          {/* 時間範圍類型選擇 */}
+          
           <div className={styles.formGroup}>
             <label>時間範圍</label>
             <div className={styles.radioGroup}>
@@ -266,7 +210,7 @@ const Summary = () => {
                   name="timeRangeType"
                   value="month"
                   checked={timeRangeType === 'month'}
-                  onChange={(e) => setTimeRangeType(e.target.value as 'month' | 'range')}
+                  onChange={handleTimeRangeTypeChange}
                 />
                 年月
               </label>
@@ -276,14 +220,14 @@ const Summary = () => {
                   name="timeRangeType"
                   value="range"
                   checked={timeRangeType === 'range'}
-                  onChange={(e) => setTimeRangeType(e.target.value as 'month' | 'range')}
+                  onChange={handleTimeRangeTypeChange}
                 />
                 日期區間
               </label>
             </div>
           </div>
         </div>
-
+        
         <div className={styles.queryRow}>
           {timeRangeType === 'month' ? (
             <>
@@ -291,23 +235,23 @@ const Summary = () => {
                 <label>年份</label>
                 <input
                   type="number"
-                  value={selectedYear}
-                  onChange={(e) => setSelectedYear(Number(e.target.value))}
-                  className={styles.input}
                   min="2020"
                   max="2030"
+                  value={selectedYear}
+                  onChange={handleYearChange}
+                  className={styles.input}
                 />
               </div>
               <div className={styles.formGroup}>
                 <label>月份</label>
                 <select
-                  value={selectedMonth}
-                  onChange={(e) => setSelectedMonth(Number(e.target.value))}
                   className={styles.select}
+                  value={selectedMonth}
+                  onChange={handleMonthChange}
                 >
-                  {Array.from({ length: 12 }, (_, i) => (
-                    <option key={i + 1} value={i + 1}>
-                      {i + 1}月
+                  {Array.from({ length: 12 }, (_, i) => i + 1).map(month => (
+                    <option key={month} value={month}>
+                      {month}月
                     </option>
                   ))}
                 </select>
@@ -319,29 +263,29 @@ const Summary = () => {
                 <label>開始日期</label>
                 <input
                   type="text"
-                  value={startDate}
-                  onChange={(e) => setStartDate(e.target.value)}
-                  className={styles.input}
                   placeholder="2025/07/01"
+                  value={startDate}
+                  onChange={handleStartDateChange}
+                  className={styles.input}
                 />
               </div>
               <div className={styles.formGroup}>
                 <label>結束日期</label>
                 <input
                   type="text"
-                  value={endDate}
-                  onChange={(e) => setEndDate(e.target.value)}
-                  className={styles.input}
                   placeholder="2025/07/23"
+                  value={endDate}
+                  onChange={handleEndDateChange}
+                  className={styles.input}
                 />
               </div>
             </>
           )}
-
+          
           <div className={styles.formGroup}>
-            <button
-              onClick={handleSearch}
+            <button 
               className={styles.searchButton}
+              onClick={handleSearch}
               disabled={isLoading}
             >
               {isLoading ? '查詢中...' : '查詢'}
@@ -352,7 +296,7 @@ const Summary = () => {
 
       {/* 熱力圖區域 */}
       <div className={styles.heatmapSection}>
-        {/* 顏色圖例 */}
+        {/* 圖例 */}
         <div className={styles.legend}>
           <div className={styles.legendItem}>
             <div className={`${styles.legendColor} ${styles.checkinLegend}`}></div>
@@ -368,85 +312,89 @@ const Summary = () => {
           </div>
         </div>
 
-        {/* 熱力圖 */}
-        {heatmapData.length > 0 ? (
-          <div className={styles.heatmapWrapper}>
-            <div className={styles.heatmapContainer}>
-              {/* 表頭 - 日期 */}
-              <div className={styles.heatmapHeader}>
-                <div className={styles.userNameHeader}>使用者</div>
-                <div className={styles.datesHeader}>
-                  {uniqueDates.map(date => (
-                    <div key={date} className={styles.dateCell}>
-                      {date.split('-').slice(1).join('/')}
+        {/* 熱力圖容器 */}
+        <div className={styles.heatmapWrapper}>
+          <div className={styles.heatmapContainer}>
+            {/* 熱力圖標題行 */}
+            <div className={styles.heatmapHeader}>
+              <div className={styles.userNameHeader}>使用者</div>
+              <div className={styles.datesHeader}>
+                {Array.from({ length: 23 }, (_, i) => {
+                  const date = new Date(2025, 6, i + 1);
+                  return (
+                    <div key={i} className={styles.dateCell}>
+                      {`${String(date.getMonth() + 1).padStart(2, '0')}/${String(date.getDate()).padStart(2, '0')}`}
                     </div>
-                  ))}
-                </div>
-              </div>
-
-              {/* 熱力圖內容 */}
-              <div className={styles.heatmapContent}>
-                {uniqueUsers.map(username => (
-                  <div key={username} className={styles.userRow}>
-                    <div className={styles.userName}>{username}</div>
-                    <div className={styles.statusCells}>
-                      {uniqueDates.map(date => {
-                        const status = getStatus(username, date);
-                        return (
-                          <div
-                            key={`${username}-${date}`}
-                            className={`${styles.statusCell} ${getStatusClass(status)} ${styles.clickableCell}`}
-                            title={getHoverText(username, date)}
-                            onClick={() => handleCellClick(username, date)}
-                          />
-                        );
-                      })}
-                    </div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             </div>
+
+            {/* 熱力圖數據行 */}
+            {heatmapData
+              .filter((_, index) => index % 23 === 0) // 每個用戶只顯示一行
+              .map((userData, userIndex) => (
+                <div key={userIndex} className={styles.heatmapRow}>
+                  <div className={styles.userNameCell}>
+                    {userData.username}
+                  </div>
+                  <div className={styles.statusCells}>
+                    {Array.from({ length: 23 }, (_, dayIndex) => {
+                      const dayData = heatmapData.find(
+                        data => data.username === userData.username && 
+                        data.date === `2025-07-${String(dayIndex + 1).padStart(2, '0')}`
+                      );
+                      
+                      if (!dayData) return <div key={dayIndex} className={styles.statusCell}></div>;
+                      
+                      const statusClass = dayData.status === 'checkin' 
+                        ? styles.checkin 
+                        : dayData.status === 'leave' 
+                        ? styles.leave 
+                        : styles.pending;
+                      
+                      return (
+                        <div 
+                          key={dayIndex} 
+                          className={`${styles.statusCell} ${statusClass}`}
+                          onClick={() => handleEmployeeClick(dayData)}
+                          title={`${dayData.username} - ${dayData.date} - ${dayData.status}`}
+                        >
+                          {dayData.status === 'leave' && dayData.leaveType && (
+                            <span className={styles.leaveType}>
+                              {dayData.leaveType === 'personal leave' ? 'P' : 'S'}
+                            </span>
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              ))}
           </div>
-        ) : (
-          <div className={styles.noData}>
-            {isLoading ? '載入中...' : '暫無資料'}
-          </div>
-        )}
+        </div>
       </div>
 
-      {/* 員工詳細資訊彈窗 */}
+      {/* 員工詳情彈窗 */}
       {showEmployeeModal && selectedEmployee && (
-        <div className={styles.modalOverlay} onClick={() => setShowEmployeeModal(false)}>
-          <div className={styles.modalContent} onClick={(e) => e.stopPropagation()}>
+        <div className={styles.modalOverlay} onClick={closeEmployeeModal}>
+          <div className={styles.modal} onClick={(e) => e.stopPropagation()}>
             <div className={styles.modalHeader}>
-              <h3>詳細資訊</h3>
-              <button 
-                className={styles.closeButton}
-                onClick={() => setShowEmployeeModal(false)}
-              >
+              <h3>員工詳情</h3>
+              <button className={styles.closeButton} onClick={closeEmployeeModal}>
                 ×
               </button>
             </div>
             <div className={styles.modalBody}>
-              <div className={styles.infoRow}>
-                <span className={styles.label}>姓名：</span>
-                <span className={styles.value}>{selectedEmployee.username}</span>
-              </div>
-              <div className={styles.infoRow}>
-                <span className={styles.label}>部門：</span>
-                <span className={styles.value}>{selectedEmployee.department}</span>
-              </div>
-              <div className={styles.infoRow}>
-                <span className={styles.label}>電話：</span>
-                <span className={styles.value}>{selectedEmployee.phone}</span>
-              </div>
-              <div className={styles.infoRow}>
-                <span className={styles.label}>日期：</span>
-                <span className={styles.value}>{selectedEmployee.date}</span>
-              </div>
-              <div className={styles.infoRow}>
-                <span className={styles.label}>狀態：</span>
-                <span className={styles.value}>{selectedEmployee.status}</span>
+              <div className={styles.employeeInfo}>
+                <p><strong>姓名：</strong>{selectedEmployee.username}</p>
+                <p><strong>電話：</strong>{selectedEmployee.phone}</p>
+                <p><strong>部門：</strong>{selectedEmployee.department}</p>
+                <p><strong>日期：</strong>{selectedEmployee.date}</p>
+                <p><strong>狀態：</strong>{selectedEmployee.status}</p>
+                {selectedEmployee.leaveType && (
+                  <p><strong>請假類型：</strong>{selectedEmployee.leaveType}</p>
+                )}
               </div>
             </div>
           </div>

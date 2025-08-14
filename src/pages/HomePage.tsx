@@ -56,7 +56,7 @@ const HomePage = () => {
         <div className={styles.systemsSection}>
           <h2 className={styles.sectionTitle}>系統權限</h2>
           <div className={styles.systemsGrid}>
-            {user.systems.map((system, index) => (
+            {user.systems.map((system) => (
               <div key={system.systemName} className={styles.systemCard}>
                 <div className={styles.systemHeader}>
                   <h3 className={styles.systemName}>{system.systemName}</h3>

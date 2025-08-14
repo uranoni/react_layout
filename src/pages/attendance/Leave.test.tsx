@@ -12,9 +12,9 @@ vi.mock('../../store/leaveStore', () => ({
 
 // Mock components
 vi.mock('../../components/Table', () => ({
-  default: ({ data, columns, loading }: any) => (
+  default: ({ data, loading }: any) => (
     <div data-testid="table">
-      {loading ? 'Loading...' : `Table with ${data?.length || 0} rows`}
+      {loading ? '查詢中...' : `Table with ${data?.length || 0} rows`}
     </div>
   )
 }))
