@@ -8,6 +8,7 @@ import Summary from '../pages/attendance/Summary';
 import SystemPage from '../pages/system/SystemPage';
 import CreateLocalUser from '../pages/system/CreateLocalUser';
 import LoginPage from '../pages/LoginPage';
+import LogoutPage from '../pages/LogoutPage';
 import NotFoundPage from '../pages/NotFoundPage';
 import ErrorPage from '../pages/ErrorPage';
 import PrivateRoute from './PrivateRoute';
@@ -55,6 +56,10 @@ export const router = createBrowserRouter([
   {
     path: '/login',
     element: <LoginPage />
+  },
+  {
+    path: '/logout',
+    element: <LogoutPage />
   },
   {
     path: '/callback-sso',

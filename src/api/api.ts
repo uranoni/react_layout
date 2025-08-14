@@ -448,4 +448,36 @@ export const getSameEmployers = async () => {
   }
 };
 
+// TODO: 需要實現的分散式 session 清除 API
+// 這個 API 是用來跟後面所有分散的伺服器溝通要清除背後 session 作用的
+// 當 SSO 登入失敗或強制登出時，需要呼叫此 API 來清除所有後端伺服器的 session
+// 
+// 建議的 API 端點：
+// POST /api/auth/clear-distributed-sessions
+// 
+// 請求格式：
+// {
+//   "userId": "string",           // 用戶 ID
+//   "sessionId": "string",        // 當前 session ID
+//   "authType": "sso",            // 認證類型
+//   "timestamp": "ISO8601",       // 時間戳
+//   "reason": "SSO_LOGIN_FAILED"  // 清除原因
+// }
+// 
+// 響應格式：
+// {
+//   "success": true,
+//   "clearedSessions": number,    // 已清除的 session 數量
+//   "message": "string"           // 操作結果訊息
+// }
+// 
+// 實現後，在 useAuthStore.ts 中取消註解以下代碼：
+// await authAPI.clearDistributedSessions();
+// 
+// 並在 authAPI 物件中添加：
+// clearDistributedSessions: async (params: ClearSessionParams) => {
+//   const response = await api.post('/auth/clear-distributed-sessions', params);
+//   return response.data;
+// }
+
 export default api; 
