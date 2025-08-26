@@ -43,7 +43,7 @@ interface AttendanceState {
   updateStatus: (eid: string, status: 'Checked-in' | 'Pending' | 'Leave') => void;
   batchCheckIn: (eids: string[]) => void;
   batchCancelCheckIn: (eids: string[]) => void;
-  fetchSiteCheckReport: (date: string) => Promise<void>;
+  fetchSiteCheckReport: (date: string, auid?: number) => Promise<void>;
   records: AttendanceRecord[];
   loading: boolean;
   fetchRecords: (startDate: string, endDate: string) => Promise<void>;
@@ -196,11 +196,18 @@ export const useAttendanceStore = create<AttendanceState>((set, get) => ({
   },
   
   // 獲取日報表的方法
-  fetchSiteCheckReport: async (date) => {
+  fetchSiteCheckReport: async (date, auid) => {
     set({ isLoading: true, error: null });
     
     try {
-      const data = await attendanceAPI.getSiteCheckReport(date);
+      // 如果有區域參數，則傳遞給 API
+      let data;
+      if (auid !== undefined) {
+        data = await attendanceAPI.getSiteCheckReport(date, auid);
+      } else {
+        data = await attendanceAPI.getSiteCheckReport(date);
+      }
+      
       console.log('API 返回的原始數據:', data);
       
       // 確保數據是數組

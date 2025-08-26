@@ -21,14 +21,14 @@
   gap: 1rem;
 }
 
-.dateFilter, .siteFilter {
+.dateFilter, .siteFilter, .areaFilter {
   display: flex;
   align-items: center;
   gap: 0.5rem;
   color: var(--text-primary);
 }
 
-.dateInput, .siteSelect {
+.dateInput, .siteSelect, .areaSelect {
   padding: 0.5rem;
   border: 1px solid var(--border);
   border-radius: 0.5rem;

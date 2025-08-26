@@ -5,6 +5,8 @@ import Table from '../../components/Table';
 import Alert from '../../components/Alert';
 import { useAttendanceStore } from '../../store/attendanceStore';
 import { useLeaveStore } from '../../store/leaveStore';
+import { useSystemConfigStore } from '../../store/systemconfigStore';
+import { getUserGroup } from '../../api/api';
 
 // 每日考勤記錄
 interface DailyRecord {
@@ -29,6 +31,7 @@ const Daily = () => {
     error
   } = useAttendanceStore();
   const { leaveRecords } = useLeaveStore();
+  const { usergroup, setUserGroup } = useSystemConfigStore();
   
   // 使用當地時區格式化日期
   const formatDate = (date: Date) => {
@@ -40,6 +43,7 @@ const Daily = () => {
   
   const today = formatDate(new Date());
   const [selectedDate, setSelectedDate] = useState(today);
+  const [selectedArea, setSelectedArea] = useState<number | ''>('');
   const [selectedEids, setSelectedEids] = useState<string[]>([]);
   const [selectAll, setSelectAll] = useState(false);
   const [searchKeyword, setSearchKeyword] = useState('');
@@ -102,14 +106,33 @@ const Daily = () => {
     }
   };
 
+  // 獲取用戶群組配置
+  useEffect(() => {
+    const fetchUserGroupConfig = async () => {
+      try {
+        const userGroupData = await getUserGroup();
+        setUserGroup(userGroupData);
+      } catch (error) {
+        console.error('Error fetching user group config:', error);
+      }
+    };
+    
+    fetchUserGroupConfig();
+  }, [setUserGroup]);
+
   // 獲取 API 出勤數據
   useEffect(() => {
     try {
-      fetchSiteCheckReport(selectedDate);
+      // 如果有選擇區域，則傳遞 auid 參數
+      if (selectedArea !== '') {
+        fetchSiteCheckReport(selectedDate, selectedArea);
+      } else {
+        fetchSiteCheckReport(selectedDate);
+      }
     } catch (error) {
       console.error('Error fetching daily report:', error);
     }
-  }, [selectedDate]);
+  }, [selectedDate, selectedArea]);
 
   // 在 Daily.tsx 中添加一個 useEffect 來檢查 API 返回的數據
   useEffect(() => {
@@ -223,6 +246,13 @@ const Daily = () => {
 
   const handleDateChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setSelectedDate(e.target.value);
+    setSelectedEids([]);
+    setSelectAll(false);
+  };
+
+  const handleAreaChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    const value = e.target.value;
+    setSelectedArea(value === '' ? '' : parseInt(value));
     setSelectedEids([]);
     setSelectAll(false);
   };
@@ -397,6 +427,21 @@ const Daily = () => {
                 ⚠️ 過去日期
               </span>
             )}
+          </div>
+          <div className={styles.areaFilter}>
+            <label>選擇區域：</label>
+            <select 
+              value={selectedArea}
+              onChange={handleAreaChange}
+              className={styles.areaSelect}
+            >
+              <option value="">全部區域</option>
+              {usergroup.map((group) => (
+                <option key={group.auid} value={group.auid}>
+                  {group.sitearea}
+                </option>
+              ))}
+            </select>
           </div>
           <div className={styles.searchBar}>
             <input 

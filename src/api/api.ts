@@ -298,10 +298,15 @@ export const authAPI = {
 
 // 出勤相關 API
 export const attendanceAPI = {
-  getSiteCheckReport: async (date: string) => {
+  getSiteCheckReport: async (date: string, auid?: number) => {
     try {
-      console.log('發送請求到 /getdaily，參數:', { utcdate: date });
-      const response = await api.post('/getdaily', { utcdate: date });
+      const params: any = { utcdate: date };
+      if (auid !== undefined) {
+        params.auid = auid;
+      }
+      
+      console.log('發送請求到 /getdaily，參數:', params);
+      const response = await api.post('/getdaily', params);
       console.log('API 響應:', response);
       return response.data;
     } catch (error) {
@@ -443,6 +448,19 @@ export const getSameEmployers = async () => {
   } catch (error) {
     if (axios.isAxiosError(error)) {
       throw new Error(error.response?.data?.message || '獲取同事資訊失敗');
+    }
+    throw error;
+  }
+};
+
+// 新增：獲取用戶群組配置 API
+export const getUserGroup = async () => {
+  try {
+    const response = await api.get('/usergroup');
+    return response.data;
+  } catch (error) {
+    if (axios.isAxiosError(error)) {
+      throw new Error(error.response?.data?.message || '獲取用戶群組配置失敗');
     }
     throw error;
   }
