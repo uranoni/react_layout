@@ -1,8 +1,42 @@
 import styles from './HomePage.module.css';
 import useAuth from '../hooks/useAuth';
+import Card from '../components/Card';
+import { useNavigate } from 'react-router';
+
+interface SystemRole {
+  systemName: string;
+  roles: string[];
+}
+
+interface UserProfile {
+  useraccount: string;
+  username: string;
+  tel: string;
+  location: string;
+  systems: SystemRole[];
+}
 
 const HomePage = () => {
   const { user } = useAuth();
+  const navigate = useNavigate();
+  
+  // 固定的用戶資料
+  const userProfile: UserProfile = {
+    useraccount: "user001",
+    username: "張三",
+    tel: "0912345001",
+    location: "台北",
+    systems: [
+      {
+        systemName: "attendance",
+        roles: ["admin", "boss"]
+      },
+      {
+        systemName: "ioc",
+        roles: ["site_leader"]
+      }
+    ]
+  };
 
   // 根據時間顯示不同的問候語
   const getGreeting = () => {
@@ -11,6 +45,53 @@ const HomePage = () => {
     if (hour < 18) return '午安';
     return '晚安';
   };
+
+  // 系統圖標映射
+  const getSystemIcon = (systemName: string) => {
+    const iconMap: Record<string, string> = {
+      'attendance': '📊',
+      'ioc': '🏭',
+      'hr': '👥',
+      'finance': '💰',
+      'inventory': '📦',
+      'reports': '📈'
+    };
+    return iconMap[systemName.toLowerCase()] || '🔧';
+  };
+
+  // 系統中文名稱映射
+  const getSystemDisplayName = (systemName: string) => {
+    const nameMap: Record<string, string> = {
+      'attendance': '考勤管理',
+      'ioc': 'IOC 系統',
+      'hr': '人力資源',
+      'finance': '財務管理',
+      'inventory': '庫存管理',
+      'reports': '報表系統'
+    };
+    return nameMap[systemName.toLowerCase()] || systemName;
+  };
+
+  // 處理系統點擊導向
+  const handleSystemClick = (systemName: string) => {
+    const routeMap: Record<string, string> = {
+      'attendance': '/attendance',
+      'ioc': '/ioc',
+      'hr': '/hr',
+      'finance': '/finance',
+      'inventory': '/inventory',
+      'reports': '/reports'
+    };
+
+    const route = routeMap[systemName.toLowerCase()];
+    if (route) {
+      navigate(route);
+    } else {
+      navigate(`/system/${systemName.toLowerCase()}`);
+    }
+  };
+
+
 
   return (
     <div className={styles.container}>
@@ -51,32 +132,54 @@ const HomePage = () => {
         )}
       </div>
       
-      {/* 系統權限卡片 */}
-      {user && user.systems && user.systems.length > 0 && (
+      {/* 員工權限及路口 */}
+      {userProfile && userProfile.systems && userProfile.systems.length > 0 && (
         <div className={styles.systemsSection}>
-          <h2 className={styles.sectionTitle}>系統權限</h2>
+          <h2 className={styles.sectionTitle}>員工權限及路口</h2>
           <div className={styles.systemsGrid}>
-            {user.systems.map((system, index) => (
-              <div key={system.systemName} className={styles.systemCard}>
-                <div className={styles.systemHeader}>
-                  <h3 className={styles.systemName}>{system.systemName}</h3>
-                  <span className={styles.roleCount}>{system.roles.length} 個權限</span>
+            {userProfile.systems.map((system: SystemRole, index: number) => (
+              <Card
+                key={system.systemName}
+                className={styles.systemCard}
+                onClick={() => handleSystemClick(system.systemName)}
+                isClickable={true}
+                variant="elevated"
+              >
+                <div className={styles.cardHeader}>
+                  <div className={styles.systemIcon}>
+                    {getSystemIcon(system.systemName)}
+                  </div>
+                  <div className={styles.systemInfo}>
+                    <h3 className={styles.systemName}>
+                      {getSystemDisplayName(system.systemName)}
+                    </h3>
+                    <span className={styles.systemCode}>{system.systemName}</span>
+                  </div>
+                  <div className={styles.roleCount}>
+                    {system.roles.length} 個權限
+                  </div>
                 </div>
+                
                 <div className={styles.rolesContainer}>
-                  {system.roles.map((role, roleIndex) => (
+                  {system.roles.map((role: string, roleIndex: number) => (
                     <span key={roleIndex} className={styles.roleTag}>
                       {role}
                     </span>
                   ))}
                 </div>
-              </div>
+                
+                <div className={styles.cardFooter}>
+                  <span className={styles.clickHint}>點擊進入系統</span>
+                  <span className={styles.arrow}>→</span>
+                </div>
+              </Card>
             ))}
           </div>
         </div>
       )}
 
       {/* 如果沒有系統權限，顯示提示 */}
-      {user && (!user.systems || user.systems.length === 0) && (
+      {userProfile && (!userProfile.systems || userProfile.systems.length === 0) && (
         <div className={styles.noSystems}>
           <p>暫無系統權限資訊</p>
         </div>

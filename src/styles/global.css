@@ -19,6 +19,10 @@
   --hover-light: #f6f6f6;
   --border-light: #e9edf4;
   --logo-bg-light: #E6F0FF;
+  --success-dark: #2E7D32;
+  --info-dark: #1565C0;
+  --warning-dark: #F57C00;
+  --danger-dark: #C62828;
 
   /* Dark Theme Colors */
   --primary-dark: #6259ca;
@@ -32,6 +36,10 @@
   --hover-dark: rgba(98, 89, 202, 0.1);
   --border-dark: #2d2d4a;
   --logo-bg-dark: #1A365D;
+  --success-dark: #2E7D32;
+  --info-dark: #1565C0;
+  --warning-dark: #F57C00;
+  --danger-dark: #C62828;
 
   /* 新增暗色主題特定的文字顏色 */
   --text-title-dark: #FFFFFF;      /* 標題文字 */
@@ -71,6 +79,7 @@
   --primary-rgb: var(--primary-rgb-light);
   --table-header-bg: #f8f9fa;
   --table-hover: #f8f9fa;
+  --logo-bg: var(--logo-bg-light);
 
   /* 表單元素專用顏色 */
   --input-bg: #FFFFFF;
@@ -93,6 +102,7 @@
   --primary-rgb: var(--primary-rgb-dark);
   --table-header-bg: #1e1e3f;
   --table-hover: #1e1e3f;
+  --logo-bg: var(--logo-bg-dark);
 
   /* 表單元素專用顏色 */
   --input-bg: #2A2D3A;
