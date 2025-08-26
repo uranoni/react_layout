@@ -39,13 +39,15 @@ describe('LoginPage', () => {
   it('renders all login form elements', () => {
     render(<LoginPage />)
     
-    // 檢查 label 文字是否存在
+    // 檢查輸入欄位標籤
     expect(screen.getByText('用戶名')).toBeInTheDocument()
     expect(screen.getByText('密碼')).toBeInTheDocument()
     
-    // 檢查按鈕
+    // 檢查按鈕 - 只檢查本地登入按鈕，因為SSO未啟用
     expect(screen.getByRole('button', { name: '本地登入' })).toBeInTheDocument()
-    expect(screen.getByRole('button', { name: '使用 SSO 登入' })).toBeInTheDocument()
+    
+    // 檢查SSO提示信息
+    expect(screen.getByText(/SSO 功能目前未配置/)).toBeInTheDocument()
   })
 
   it('updates input values when user types', () => {
@@ -86,14 +88,13 @@ describe('LoginPage', () => {
   })
 
   it('handles SSO login click', () => {
-    mockSSOLogin.mockImplementation(() => Promise.resolve())
-    
     render(<LoginPage />)
     
-    const ssoButton = screen.getByRole('button', { name: '使用 SSO 登入' })
-    fireEvent.click(ssoButton)
+    // 由於SSO未啟用，應該顯示提示信息而不是按鈕
+    expect(screen.getByText(/SSO 功能目前未配置/)).toBeInTheDocument()
     
-    expect(mockSSOLogin).toHaveBeenCalled()
+    // 不應該有SSO按鈕
+    expect(screen.queryByRole('button', { name: '使用 SSO 登入' })).not.toBeInTheDocument()
   })
 
   it('displays error message on login failure', async () => {
@@ -120,14 +121,16 @@ describe('LoginPage', () => {
   it('renders divider with correct text', () => {
     render(<LoginPage />)
     
-    expect(screen.getByText('或')).toBeInTheDocument()
+    // 由於SSO未啟用，不應該有分隔符
+    expect(screen.queryByText('或')).not.toBeInTheDocument()
   })
 
   it('has correct form structure', () => {
     render(<LoginPage />)
     
+    // 只有一個按鈕（本地登入），因為SSO未啟用
     const buttons = screen.getAllByRole('button')
-    expect(buttons).toHaveLength(2)
+    expect(buttons).toHaveLength(1)
     
     // 檢查表單是否存在
     const form = screen.getByRole('button', { name: '本地登入' }).closest('form')

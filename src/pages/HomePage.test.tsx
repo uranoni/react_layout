@@ -1,48 +1,95 @@
 import '@testing-library/jest-dom'
 import { render, screen } from '@testing-library/react'
-import { describe, it, expect } from 'vitest'
+import { describe, it, expect, vi, beforeEach } from 'vitest'
+import { BrowserRouter } from 'react-router'
 import HomePage from './HomePage'
 
+// Mock useAuth hook
+const mockUseAuth = vi.fn()
+
+vi.mock('../hooks/useAuth', () => ({
+  default: () => mockUseAuth()
+}))
+
+// Mock useAuthStore
+const mockUseAuthStore = vi.fn()
+
+vi.mock('../store/useAuthStore', () => ({
+  default: () => mockUseAuthStore()
+}))
+
+const TestWrapper = ({ children }: { children: React.ReactNode }) => (
+  <BrowserRouter>
+    {children}
+  </BrowserRouter>
+)
+
 describe('HomePage', () => {
+  beforeEach(() => {
+    // 設置預設的 mock 返回值
+    mockUseAuth.mockReturnValue({
+      user: {
+        username: '測試用戶',
+        useraccount: 'testuser',
+        tel: '0912-345-678',
+        location: '新竹',
+        authType: 'local',
+        systems: [
+          {
+            systemName: '出勤系統',
+            roles: ['使用者', '管理員']
+          }
+        ]
+      }
+    })
+  })
+
   it('renders main title correctly', () => {
-    render(<HomePage />)
-    expect(screen.getByText('歡迎使用管理系統')).toBeInTheDocument()
+    render(<HomePage />, { wrapper: TestWrapper })
+    expect(screen.getByText(/歡迎使用管理系統/)).toBeInTheDocument()
   })
 
   it('renders all dashboard cards', () => {
-    render(<HomePage />)
+    render(<HomePage />, { wrapper: TestWrapper })
     
-    // 檢查所有卡片標題
-    expect(screen.getByText('今日出勤')).toBeInTheDocument()
-    expect(screen.getByText('請假人數')).toBeInTheDocument()
-    expect(screen.getByText('遲到人數')).toBeInTheDocument()
+    // 檢查系統權限卡片
+    expect(screen.getByText('系統權限')).toBeInTheDocument()
+    expect(screen.getByText('出勤系統')).toBeInTheDocument()
   })
 
   it('displays correct statistics values', () => {
-    render(<HomePage />)
+    render(<HomePage />, { wrapper: TestWrapper })
     
-    // 檢查統計數據
-    expect(screen.getByText('85%')).toBeInTheDocument()
-    expect(screen.getByText('3 人')).toBeInTheDocument()
-    expect(screen.getByText('1 人')).toBeInTheDocument()
+    // 檢查用戶信息 - 使用更具體的查詢方式
+    expect(screen.getByText('testuser')).toBeInTheDocument()
+    expect(screen.getByText('0912-345-678')).toBeInTheDocument()
+    expect(screen.getByText('新竹')).toBeInTheDocument()
+    
+    // 檢查問候語中的用戶名
+    const greeting = screen.getByText(/早安.*測試用戶.*！/)
+    expect(greeting).toBeInTheDocument()
   })
 
   it('has correct structure with dashboard container', () => {
-    render(<HomePage />)
+    render(<HomePage />, { wrapper: TestWrapper })
     
-    const title = screen.getByText('歡迎使用管理系統')
-    expect(title.tagName).toBe('H1')
+    const title = screen.getByText(/歡迎使用管理系統/)
+    expect(title.tagName).toBe('SPAN')
     
-    // 檢查卡片標題是 H3
-    const cardTitles = screen.getAllByRole('heading', { level: 3 })
-    expect(cardTitles).toHaveLength(3)
+    // 檢查系統權限標題是 H2
+    const sectionTitle = screen.getByRole('heading', { level: 2 })
+    expect(sectionTitle).toBeInTheDocument()
   })
 
   it('renders all required elements', () => {
-    render(<HomePage />)
+    render(<HomePage />, { wrapper: TestWrapper })
     
     // 檢查所有必要元素都存在
-    expect(screen.getByRole('heading', { level: 1 })).toBeInTheDocument()
-    expect(screen.getAllByRole('heading', { level: 3 })).toHaveLength(3)
+    expect(screen.getByRole('heading', { level: 2 })).toBeInTheDocument()
+    expect(screen.getByText('出勤系統')).toBeInTheDocument()
+    
+    // 檢查用戶信息區域
+    const userInfo = screen.getByText('testuser').closest('div')
+    expect(userInfo).toBeInTheDocument()
   })
 }) 

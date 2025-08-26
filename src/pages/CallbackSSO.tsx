@@ -20,13 +20,15 @@ const CallbackSSO = () => {
     const handleCallback = async () => {
       try {
         // 使用 hook 提供的狀態進行雙重檢查
-        if (isAuthenticated && keycloak.authenticated) {
+        if (isAuthenticated && keycloak?.authenticated) {
           console.log('SSO 認證成功，開始處理 tokens...');
           
           // 儲存 SSO tokens
-          localStorage.setItem('sso_idtoken', keycloak.idToken || '');
-          localStorage.setItem('sso_accesstoken', keycloak.token || '');
-          localStorage.setItem('sso_refreshtoken', keycloak.refreshToken || '');
+          if (keycloak) {
+            localStorage.setItem('sso_idtoken', keycloak.idToken || '');
+            localStorage.setItem('sso_accesstoken', keycloak.token || '');
+            localStorage.setItem('sso_refreshtoken', keycloak.refreshToken || '');
+          }
 
           // 設置預登入狀態為 SSO
           localStorage.setItem('preLoginType', 'sso');
@@ -79,9 +81,9 @@ const CallbackSSO = () => {
           }
         } else {
           console.log('認證失敗 - Keycloak 初始化完成但未認證');
-          console.log('isAuthenticated:', isAuthenticated);
-          console.log('keycloak.authenticated:', keycloak.authenticated);
-          
+          if (keycloak) {
+            console.log('keycloak.authenticated:', keycloak.authenticated);
+          }
           // 如果認證失敗，重新導向到登入頁
           navigate('/login', { replace: true });
         }
