@@ -137,7 +137,6 @@ const HomePage = () => {
         <div className={styles.systemsSection}>
           <h2 className={styles.sectionTitle}>員工權限及路口</h2>
           <div className={styles.systemsGrid}>
-<<<<<<< HEAD
             {userProfile.systems.map((system: SystemRole, index: number) => (
               <Card
                 key={system.systemName}
@@ -159,13 +158,6 @@ const HomePage = () => {
                   <div className={styles.roleCount}>
                     {system.roles.length} 個權限
                   </div>
-=======
-            {user.systems.map((system) => (
-              <div key={system.systemName} className={styles.systemCard}>
-                <div className={styles.systemHeader}>
-                  <h3 className={styles.systemName}>{system.systemName}</h3>
-                  <span className={styles.roleCount}>{system.roles.length} 個權限</span>
->>>>>>> 7a0d47fd8cc119b80fbc5971abfa17204ae05337
                 </div>
                 
                 <div className={styles.rolesContainer}>
