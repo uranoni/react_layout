@@ -58,7 +58,7 @@ export const useAuthStore = create<AuthState>((set) => ({
       
       // 執行登入 API
       const response = await authAPI.login(username, password);
-      const { access_token: accessToken, refresh_token: refreshToken } = response;
+      const { accessToken,  refreshToken } = response;
       
       // 儲存 tokens
       localStorage.setItem('access_token', accessToken);

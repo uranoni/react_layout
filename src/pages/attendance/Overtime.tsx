@@ -20,7 +20,7 @@ interface Colleague {
 }
 
 interface OvertimeFormData {
-  account: string;
+  selectedAccounts: string[];
   startDateTime: string;
   endDateTime: string;
   reason: string;
@@ -59,20 +59,11 @@ const Overtime = () => {
   });
   
   const [formData, setFormData] = useState<OvertimeFormData>({
-    account: '',
+    selectedAccounts: [],
     startDateTime: '',
     endDateTime: '',
     reason: ''
   });
-
-  // 加班清單狀態
-  const [overtimeList, setOvertimeList] = useState<Array<{
-    account: string;
-    accountName: string;
-    startDateTime: string;
-    endDateTime: string;
-    reason: string;
-  }>>([]);
 
   // 初始載入當天資料
   useEffect(() => {
@@ -134,13 +125,11 @@ const Overtime = () => {
     setShowModal(true);
     // 重置表單
     setFormData({
-      account: '',
+      selectedAccounts: [],
       startDateTime: '',
       endDateTime: '',
       reason: ''
     });
-    // 重置加班清單
-    setOvertimeList([]);
     // 獲取同事資料
     await fetchColleagues();
   };
@@ -170,58 +159,28 @@ const Overtime = () => {
     }
   };
 
-  // 新增到加班清單
-  const handleAddToOvertimeList = () => {
-    if (!formData.account || !formData.startDateTime || !formData.endDateTime || !formData.reason) {
-      setAlertConfig({
-        isOpen: true,
-        title: '表單驗證',
-        message: '請填寫所有必填欄位',
-        onConfirm: () => {
-          setAlertConfig(prev => ({ ...prev, isOpen: false }));
-        },
-        onCancel: () => {
-          setAlertConfig(prev => ({ ...prev, isOpen: false }));
-        },
-        type: 'info'
-      });
-      return;
+  // 處理多選人員
+  const handleAccountSelection = (account: string, checked: boolean) => {
+    if (checked) {
+      setFormData(prev => ({
+        ...prev,
+        selectedAccounts: [...prev.selectedAccounts, account]
+      }));
+    } else {
+      setFormData(prev => ({
+        ...prev,
+        selectedAccounts: prev.selectedAccounts.filter(acc => acc !== account)
+      }));
     }
-
-    const selectedColleague = colleagues.find(c => c.useraccount === formData.account);
-    if (!selectedColleague) return;
-
-    const newOvertimeItem = {
-      account: formData.account,
-      accountName: selectedColleague.username,
-      startDateTime: formData.startDateTime,
-      endDateTime: formData.endDateTime,
-      reason: formData.reason
-    };
-
-    setOvertimeList(prev => [...prev, newOvertimeItem]);
-
-    // 重置表單
-    setFormData({
-      account: '',
-      startDateTime: '',
-      endDateTime: '',
-      reason: ''
-    });
-  };
-
-  // 從加班清單移除
-  const handleRemoveFromOvertimeList = (index: number) => {
-    setOvertimeList(prev => prev.filter((_, i) => i !== index));
   };
 
   // 提交加班申請
   const handleSubmit = async () => {
-    if (overtimeList.length === 0) {
+    if (formData.selectedAccounts.length === 0) {
       setAlertConfig({
         isOpen: true,
         title: '表單驗證',
-        message: '請先新增加班項目到清單中',
+        message: '請選擇至少一名員工',
         onConfirm: () => {
           setAlertConfig(prev => ({ ...prev, isOpen: false }));
         },
@@ -233,50 +192,93 @@ const Overtime = () => {
       return;
     }
 
-    setIsSubmitting(true);
-    try {
-      await overtimeAPI.setOvertime({
-        overtimeList: overtimeList.map(item => ({
-          account: item.account,
-          startDateTime: item.startDateTime,
-          endDateTime: item.endDateTime,
-          reason: item.reason
-        })),
-        timezone: 'Asia/Taipei'
-      });
-
+    if (!formData.startDateTime || !formData.endDateTime || !formData.reason) {
       setAlertConfig({
         isOpen: true,
-        title: '成功',
-        message: '加班申請已提交成功',
-        onConfirm: () => {
-          setAlertConfig(prev => ({ ...prev, isOpen: false }));
-          setShowModal(false);
-          // 重新載入加班記錄
-          fetchOvertimeRecords(dateRange.startDate, dateRange.endDate);
-        },
-        onCancel: () => {
-          setAlertConfig(prev => ({ ...prev, isOpen: false }));
-        },
-        type: 'success'
-      });
-    } catch (error) {
-      console.error('提交加班申請失敗:', error);
-      setAlertConfig({
-        isOpen: true,
-        title: '錯誤',
-        message: error instanceof Error ? error.message : '提交加班申請失敗',
+        title: '表單驗證',
+        message: '請填寫開始時間、結束時間和加班原因',
         onConfirm: () => {
           setAlertConfig(prev => ({ ...prev, isOpen: false }));
         },
         onCancel: () => {
           setAlertConfig(prev => ({ ...prev, isOpen: false }));
         },
-        type: 'error'
+        type: 'info'
       });
-    } finally {
-      setIsSubmitting(false);
+      return;
     }
+
+    // 顯示確認對話框
+    const selectedNames = formData.selectedAccounts.map(account => {
+      const colleague = colleagues.find(c => c.useraccount === account);
+      return colleague ? `${colleague.username}(${account})` : account;
+    }).join('、');
+
+    setAlertConfig({
+      isOpen: true,
+      title: '確認送出加班申請',
+      message: `確定要為以下員工送出加班申請嗎？\n\n員工：${selectedNames}\n開始時間：${formData.startDateTime}\n結束時間：${formData.endDateTime}\n加班原因：${formData.reason}`,
+      onConfirm: async () => {
+        setAlertConfig(prev => ({ ...prev, isOpen: false }));
+        
+        setIsSubmitting(true);
+        try {
+          // 格式化日期時間為 YYYY-MM-DD HH:mm 格式
+          const formatDateTime = (dateTimeString: string) => {
+            const date = new Date(dateTimeString);
+            const year = date.getFullYear();
+            const month = String(date.getMonth() + 1).padStart(2, '0');
+            const day = String(date.getDate()).padStart(2, '0');
+            const hours = String(date.getHours()).padStart(2, '0');
+            const minutes = String(date.getMinutes()).padStart(2, '0');
+            return `${year}-${month}-${day} ${hours}:${minutes}`;
+          };
+
+          await overtimeAPI.setOvertime({
+            accounts: formData.selectedAccounts,
+            startdate: formatDateTime(formData.startDateTime),
+            enddate: formatDateTime(formData.endDateTime),
+            reason: formData.reason
+          });
+
+          setAlertConfig({
+            isOpen: true,
+            title: '成功',
+            message: '加班申請已提交成功',
+            onConfirm: () => {
+              setAlertConfig(prev => ({ ...prev, isOpen: false }));
+              setShowModal(false);
+              // 重新載入加班記錄
+              fetchOvertimeRecords(dateRange.startDate, dateRange.endDate);
+            },
+            onCancel: () => {
+              setAlertConfig(prev => ({ ...prev, isOpen: false }));
+            },
+            type: 'success'
+          });
+        } catch (error) {
+          console.error('提交加班申請失敗:', error);
+          setAlertConfig({
+            isOpen: true,
+            title: '錯誤',
+            message: error instanceof Error ? error.message : '提交加班申請失敗',
+            onConfirm: () => {
+              setAlertConfig(prev => ({ ...prev, isOpen: false }));
+            },
+            onCancel: () => {
+              setAlertConfig(prev => ({ ...prev, isOpen: false }));
+            },
+            type: 'error'
+          });
+        } finally {
+          setIsSubmitting(false);
+        }
+      },
+      onCancel: () => {
+        setAlertConfig(prev => ({ ...prev, isOpen: false }));
+      },
+      type: 'info'
+    });
   };
 
   // 取消加班
@@ -462,121 +464,75 @@ const Overtime = () => {
             </div>
             
             <div className={styles.form}>
-              <div className={styles.formRow}>
-                <div className={styles.formGroup}>
-                  <label>員工帳號 *</label>
-                  <select
-                    value={formData.account}
-                    onChange={(e) => setFormData(prev => ({ ...prev, account: e.target.value }))}
-                    className={styles.select}
-                    required
-                    disabled={isLoadingColleagues}
-                  >
-                    <option value="">
-                      {isLoadingColleagues ? '載入中...' : '請選擇員工'}
-                    </option>
-                    {colleagues.map(colleague => (
-                      <option key={colleague.useraccount} value={colleague.useraccount}>
+              {/* 人員選擇區域 */}
+              <div className={styles.formSection}>
+                <h4>選擇員工 (可多選)</h4>
+                <div className={styles.employeeGrid}>
+                  {colleagues.map(colleague => (
+                    <label key={colleague.useraccount} className={styles.employeeCheckbox}>
+                      <input
+                        type="checkbox"
+                        checked={formData.selectedAccounts.includes(colleague.useraccount)}
+                        onChange={(e) => handleAccountSelection(colleague.useraccount, e.target.checked)}
+                        disabled={isLoadingColleagues}
+                      />
+                      <span className={styles.checkboxLabel}>
                         {colleague.username}({colleague.useraccount})
-                      </option>
-                    ))}
-                  </select>
+                      </span>
+                    </label>
+                  ))}
                 </div>
               </div>
 
-              <div className={styles.formRow}>
+              {/* 批次設定區域 */}
+              <div className={styles.formSection}>
+                <h4>批次設定</h4>
+                <div className={styles.formRow}>
+                  <div className={styles.formGroup}>
+                    <label>開始時間 *</label>
+                    <input
+                      type="datetime-local"
+                      value={formData.startDateTime}
+                      onChange={(e) => setFormData(prev => ({ ...prev, startDateTime: e.target.value }))}
+                      className={styles.input}
+                      required
+                    />
+                  </div>
+                  <div className={styles.formGroup}>
+                    <label>結束時間 *</label>
+                    <input
+                      type="datetime-local"
+                      value={formData.endDateTime}
+                      onChange={(e) => setFormData(prev => ({ ...prev, endDateTime: e.target.value }))}
+                      className={styles.input}
+                      required
+                    />
+                  </div>
+                </div>
+
                 <div className={styles.formGroup}>
-                  <label>開始時間 *</label>
-                  <input
-                    type="datetime-local"
-                    value={formData.startDateTime}
-                    onChange={(e) => setFormData(prev => ({ ...prev, startDateTime: e.target.value }))}
-                    className={styles.input}
+                  <label>加班原因 *</label>
+                  <textarea
+                    value={formData.reason}
+                    onChange={(e) => setFormData(prev => ({ ...prev, reason: e.target.value }))}
+                    className={styles.textarea}
+                    placeholder="請輸入加班原因"
                     required
                   />
                 </div>
-                <div className={styles.formGroup}>
-                  <label>結束時間 *</label>
-                  <input
-                    type="datetime-local"
-                    value={formData.endDateTime}
-                    onChange={(e) => setFormData(prev => ({ ...prev, endDateTime: e.target.value }))}
-                    className={styles.input}
-                    required
-                  />
-                </div>
               </div>
 
-              <div className={styles.formGroup}>
-                <label>加班原因 *</label>
-                <textarea
-                  value={formData.reason}
-                  onChange={(e) => setFormData(prev => ({ ...prev, reason: e.target.value }))}
-                  className={styles.textarea}
-                  placeholder="請輸入加班原因"
-                  required
-                />
-              </div>
-
-              <div className={styles.formActions}>
+              {/* 提交按鈕 */}
+              <div className={styles.submitSection}>
                 <button
-                  type="button"
-                  onClick={handleAddToOvertimeList}
-                  className={styles.addToListBtn}
-                  disabled={!formData.account || !formData.startDateTime || !formData.endDateTime || !formData.reason}
+                  onClick={handleSubmit}
+                  className={styles.submitBtn}
+                  disabled={isSubmitting || formData.selectedAccounts.length === 0 || !formData.startDateTime || !formData.endDateTime || !formData.reason}
                 >
-                  新增到加班清單
+                  {isSubmitting ? '提交中...' : '送出加班申請'}
                 </button>
               </div>
             </div>
-
-            {/* 加班清單 */}
-            {overtimeList.length > 0 && (
-              <div className={styles.overtimeListSection}>
-                <h4>加班清單</h4>
-                <div className={styles.overtimeListTable}>
-                  <table>
-                    <thead>
-                      <tr>
-                        <th>員工</th>
-                        <th>開始時間</th>
-                        <th>結束時間</th>
-                        <th>加班原因</th>
-                        <th>操作</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {overtimeList.map((item, index) => (
-                        <tr key={index}>
-                          <td>{item.accountName}({item.account})</td>
-                          <td>{item.startDateTime}</td>
-                          <td>{item.endDateTime}</td>
-                          <td>{item.reason}</td>
-                          <td>
-                            <button
-                              onClick={() => handleRemoveFromOvertimeList(index)}
-                              className={styles.removeBtn}
-                            >
-                              移除
-                            </button>
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-                
-                <div className={styles.submitSection}>
-                  <button
-                    onClick={handleSubmit}
-                    className={styles.submitBtn}
-                    disabled={isSubmitting}
-                  >
-                    {isSubmitting ? '提交中...' : '送出加班'}
-                  </button>
-                </div>
-              </div>
-            )}
           </div>
         </div>
       )}

@@ -137,7 +137,7 @@ const HomePage = () => {
         <div className={styles.systemsSection}>
           <h2 className={styles.sectionTitle}>員工權限及路口</h2>
           <div className={styles.systemsGrid}>
-            {userProfile.systems.map((system: SystemRole, index: number) => (
+            {userProfile.systems.map((system: SystemRole) => (
               <Card
                 key={system.systemName}
                 className={styles.systemCard}
