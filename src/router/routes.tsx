@@ -4,6 +4,7 @@ import HomePage from '../pages/HomePage';
 import AttendancePage from '../pages/attendance/AttendancePage';
 import Daily from '../pages/attendance/Daily';
 import Leave from '../pages/attendance/Leave';
+import Overtime from '../pages/attendance/Overtime';
 import Summary from '../pages/attendance/Summary';
 import SystemPage from '../pages/system/SystemPage';
 import CreateLocalUser from '../pages/system/CreateLocalUser';
@@ -33,6 +34,10 @@ export const router = createBrowserRouter([
           {
             path: 'leave',
             element: <Leave />
+          },
+          {
+            path: 'overtime',
+            element: <Overtime />
           },
           {
             path: 'summary',

@@ -466,4 +466,78 @@ export const getUserGroup = async () => {
   }
 };
 
+// 加班相關 API
+export const overtimeAPI = {
+  // 獲取加班記錄
+  getOvertimeRecords: async (startDate: string, endDate: string) => {
+    try {
+      console.log('發送請求到 /getovertime，參數:', { startDate, endDate });
+      const response = await api.post('/getovertime', {
+        startdate: startDate,
+        enddate: endDate
+      });
+      console.log('獲取加班記錄 API 響應:', response);
+      return response.data;
+    } catch (error) {
+      console.error('獲取加班記錄失敗:', error);
+      if (axios.isAxiosError(error)) {
+        console.error('請求錯誤詳情:', {
+          status: error.response?.status,
+          data: error.response?.data,
+          headers: error.response?.headers
+        });
+      }
+      throw error;
+    }
+  },
+
+  // 提交加班申請
+  setOvertime: async (overtimeData: {
+    overtimeList: Array<{
+      account: string;
+      startDateTime: string;
+      endDateTime: string;
+      reason: string;
+    }>;
+    timezone: string;
+  }) => {
+    try {
+      console.log('發送加班申請到 /setovertime，參數:', overtimeData);
+      const response = await api.post('/setovertime', overtimeData);
+      console.log('加班申請 API 響應:', response);
+      return response.data;
+    } catch (error) {
+      console.error('提交加班申請失敗:', error);
+      if (axios.isAxiosError(error)) {
+        console.error('請求錯誤詳情:', {
+          status: error.response?.status,
+          data: error.response?.data,
+          headers: error.response?.headers
+        });
+      }
+      throw error;
+    }
+  },
+
+  // 取消加班
+  deleteOvertime: async (leaveId: number) => {
+    try {
+      console.log('發送取消加班請求到 /deleteovertime，參數:', { leave_id: leaveId });
+      const response = await api.post('/deleteovertime', { leave_id: leaveId });
+      console.log('取消加班 API 響應:', response);
+      return response.data;
+    } catch (error) {
+      console.error('取消加班失敗:', error);
+      if (axios.isAxiosError(error)) {
+        console.error('請求錯誤詳情:', {
+          status: error.response?.status,
+          data: error.response?.data,
+          headers: error.response?.headers
+        });
+      }
+      throw error;
+    }
+  }
+};
+
 export default api; 

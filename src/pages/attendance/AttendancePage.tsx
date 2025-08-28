@@ -1,9 +1,23 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate, Outlet } from 'react-router';
 import styles from './AttendancePage.module.css';
 
 const AttendancePage = () => {
   const [activeTab, setActiveTab] = useState('daily');
+  
+  // 根據當前路徑設置活動標籤
+  useEffect(() => {
+    const path = window.location.pathname;
+    if (path.includes('/overtime')) {
+      setActiveTab('overtime');
+    } else if (path.includes('/leave')) {
+      setActiveTab('leave');
+    } else if (path.includes('/summary')) {
+      setActiveTab('summary');
+    } else {
+      setActiveTab('daily');
+    }
+  }, []);
   const navigate = useNavigate();
 
   const handleTabChange = (tab: string) => {
@@ -14,6 +28,9 @@ const AttendancePage = () => {
         break;
       case 'leave':
         navigate('/attendance/leave');
+        break;
+      case 'overtime':
+        navigate('/attendance/overtime');
         break;
       case 'summary':
         navigate('/attendance/summary');
@@ -39,6 +56,13 @@ const AttendancePage = () => {
           >
             <i className="fas fa-calendar-times"></i>
             請假系統
+          </button>
+          <button 
+            className={`${styles.tab} ${activeTab === 'overtime' ? styles.active : ''}`}
+            onClick={() => handleTabChange('overtime')}
+          >
+            <i className="fas fa-clock"></i>
+            加班系統
           </button>
           <button 
             className={`${styles.tab} ${activeTab === 'summary' ? styles.active : ''}`}
